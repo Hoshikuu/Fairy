@@ -10,8 +10,7 @@ load_dotenv()
 TOKEN = getenv("DISCORD_TOKEN")
 
 # Permisos del bot
-intents = discord.Intents.default()
-intents.message_content = True
+intents = discord.Intents.all()
 bot = commands.Bot(command_prefix="hs$", intents=intents)
 
 # Conexiona la base de datos
