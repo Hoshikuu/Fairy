@@ -15,13 +15,13 @@ intents.message_content = True
 bot = commands.Bot(command_prefix="hs$", intents=intents)
 
 # Conexiona la base de datos
-def DatabaseConnect():
-    conn = sqlite3.connect("hoyostars.db")
+def DatabaseConnect(guild):
+    conn = sqlite3.connect(f"{guild}.db")
     return conn
 
 # Crea la tabla principal para almacenar la cantidad de mensajes enviados por usuario
-def CreateDatabase():
-    conn = DatabaseConnect()
+def CreateDatabase(guild):
+    conn = DatabaseConnect(guild)
     cursor = conn.cursor()
 
     cursor.execute("""
@@ -36,8 +36,9 @@ def CreateDatabase():
 # Mensaje de inicio
 @bot.event
 async def on_ready():
-    CreateDatabase()
-    print(f"[!] Bot listo y logueado como {bot.user}")
+    print(f"Bot conectado como {bot.user}")
+    for guild in bot.guilds:
+        print(f"Conectado al servidor: {guild.name}")
 
 # Registrar cada mensaje de cada usuario exeptuando bots
 @bot.event
@@ -48,7 +49,9 @@ async def on_message(message):
     user_id = message.author.id
     username = str(message.author)
     
-    conn = DatabaseConnect()
+    CreateDatabase(message.guild.name)
+    
+    conn = DatabaseConnect(message.guild.name)
     cursor = conn.cursor()
     
     cursor.execute("SELECT cantidad FROM mensajes WHERE user_id = ?", (user_id,))
@@ -67,7 +70,7 @@ async def on_message(message):
 # Comando para mostrar el contador de mensajes de cada usuario
 @bot.command()
 async def count(ctx):
-    conn = DatabaseConnect()
+    conn = DatabaseConnect(ctx.guild.name)
     cursor = conn.cursor()
     cursor.execute("SELECT username, cantidad FROM mensajes ORDER BY cantidad DESC")
     datos = cursor.fetchall()
@@ -86,7 +89,7 @@ async def count(ctx):
     
 @bot.command()
 async def export(ctx):
-    conn = DatabaseConnect()
+    conn = DatabaseConnect(ctx.guild.name)
     cursor = conn.cursor()
     cursor.execute("SELECT user_id, username, cantidad FROM mensajes ORDER BY cantidad DESC")
     datos = cursor.fetchall()
@@ -96,11 +99,11 @@ async def export(ctx):
         csvData.append([user_id, username, cantidad])
         
     print(csvData)
-    with open("csvExport.csv", mode="w", newline="", encoding="utf-8") as file:
+    with open(f"{ctx.guild.name}Export.csv", mode="w", newline="", encoding="utf-8") as file:
         writer = csv.writer(file)
         writer.writerows(datos)
         
-    await ctx.send("Export:", file=discord.File("csvExport.csv"))
+    await ctx.send("Exporting message count:", file=discord.File(f"{ctx.guild.name}Export.csv"))
 
 # Comando para mostrar la informacion basica del bot
 @bot.command()

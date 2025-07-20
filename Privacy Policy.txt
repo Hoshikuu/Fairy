@@ -1,0 +1,8 @@
+Privacy Policy
+This bot is for personal use only and is not intended for public use.
+The bot does not collect, store, or share any personal data from users.
+All information processed by the bot is used solely for its basic functionality within Discord and is not stored permanently.
+
+If at any point the bot stores data (such as settings or preferences), it will only be used to improve its functionality and will not be shared with third parties.
+
+By using this bot, you agree that its use is at your own risk.

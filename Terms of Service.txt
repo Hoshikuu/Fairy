@@ -1,0 +1,13 @@
+Terms of Service
+This bot is for personal use only and is not intended for public distribution.
+By using this bot, you agree to the following:
+
+No Guarantees – The bot is provided "as is" without any warranty of functionality, availability, or reliability.
+
+Limited Use – The bot should only be used within authorized servers where it has been intentionally added.
+
+No Liability – The creator of this bot is not responsible for any damage, data loss, or issues that may occur from its use.
+
+Respect Discord’s Terms – Users must comply with Discord’s Terms of Service and Community Guidelines while using the bot.
+
+By continuing to use this bot, you accept these terms.
