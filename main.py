@@ -47,6 +47,11 @@ def CreateDatabase(guild):
 @bot.event
 async def on_ready():
     print(f"Bot conectado como {bot.user}")
+    try:
+        synced = await bot.tree.sync()
+        print(f"Sincronizados {len(synced)} comandos")
+    except Exception as e:
+        print(f"Error al sincronizar comandos: {e}")
     for guild in bot.guilds:
         print(f"Conectado al servidor: {guild.name} con id: {guild.id}")
 
@@ -82,7 +87,7 @@ async def on_message(message):
 
 # TODO: Deberia pensar en un nombre mejor para este comando no me gusta esto
 # Comando para mostrar el contador de mensajes de cada usuario
-@bot.command()
+@bot.hybrid_command(name="count", description="Muestra el contador de mensajes.")
 @commands.has_any_role("Miembro") # Recuerda que tambien se puede usar ID de roles para mas seguridad por si se cambia el nombre
 async def count(ctx):
     conn = DatabaseConnect(ctx.guild.id)
@@ -108,7 +113,7 @@ async def count(ctx):
 # Explicacion sencilla es basicamente, descargar una plantilla del excel, introducir los datos del csv y volver a subirlo al drive, eso o enviarte el excel por chat
 # Con todas las estadisticas
 # Funcion para exportar los datos actuales a CSV y enviarlas por chat
-@bot.command()
+@bot.hybrid_command(name="export", description="Exporta en un CSV el contador de mensajes.")
 @commands.has_any_role("Miembro") # Recuerda que tambien se puede usar ID de roles para mas seguridad por si se cambia el nombre
 async def export(ctx):
     conn = DatabaseConnect(ctx.guild.id)
@@ -143,21 +148,26 @@ async def permission_error(ctx, error):
         )
         await ctx.send(embed=embed, reference=ctx.message)
 
-# Comando para mostrar la informacion basica del bot
-@bot.command()
-async def info(ctx):
+# Informacion basica del bot
+#* Esto hay que tenerlo en cuenta, Este comando Hybrido funciona si usaras comandos de prefijo pero tambien te los añade en el command tree asi que son utiles para no repetir mucho codigo
+@bot.hybrid_command(name="info", description="Muestra la información básica del bot")
+async def info(ctx: commands.Context):
     embed = discord.Embed(
         title="HoyoStars",
         description="Un bot privado para el servidor HoyoStars.",
-        color=discord.Color.blue()  # HEX: discord.Color.from_rgb(0,0,0)
+        color=discord.Color.blue()
     )
-    embed.set_author(name=ctx.author.name, icon_url=ctx.author.avatar.url)
-    embed.add_field(name="Ping", value=f"{round(bot.latency*1000)}ms", inline=False)
-    embed.add_field(name="Creador", value="yhoshiku", inline=True) # Si, Soy yo.
+
+    # Para obtener el usuario correctamente en ambos casos
+    user = ctx.author if ctx.author else ctx.user
+    embed.set_author(name=user.name, icon_url=user.avatar.url)
+
+    embed.add_field(name="Ping", value=f"{round(ctx.bot.latency * 1000)}ms", inline=False)
+    embed.add_field(name="Creador", value="yhoshiku", inline=True)
     embed.set_footer(text="Gracias por usarme ❤️")
 
-    await ctx.send(embed=embed, reference=ctx.message)
-
+    await ctx.send(embed=embed)
+    
 # Para ejecutar el bot, amego tu tener cegarro?
 if __name__ == "__main__":
     bot.run(TOKEN)
