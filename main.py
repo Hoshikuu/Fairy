@@ -9,6 +9,7 @@ from dotenv import load_dotenv
 # Modulos adicionales
 import sqlite3
 import csv
+import json
 
 # ---------------------------------------------------------------------------------------
 
@@ -16,10 +17,21 @@ import csv
 load_dotenv()
 TOKEN = getenv("DISCORD_TOKEN")
 
+# Carga el archivo de configuracion del bot
+def ChargeConfig():
+    with open("botconfig.json", "r", encoding="utf-8") as file:
+        return json.load(file)
+    
+configJson = ChargeConfig()
+
+def GetPrefix(bot, message):
+    print(configJson[str(message.guild.id)]["prefix"])
+    return configJson[str(message.guild.id)]["prefix"]
+
 # ME DA PALO HACER QUE USE LOS PERMISOS ESPECIFICOS ASI QUE LE DOY TODOS LOS PERMISOS
 # Permisos del bot
 intents = discord.Intents.all()
-bot = commands.Bot(command_prefix="hs$", intents=intents) # TODO: Cambia el sufijo porfavor que me cuesta escribirlo
+bot = commands.Bot(command_prefix=GetPrefix, intents=intents) # TODO: Cambia el sufijo porfavor que me cuesta escribirlo
 
 # Dependiendo de que servidor el nombre de la base de datos cambia para no filtrar informacion de un servidor en concreto
 # Conexiona la base de datos
@@ -147,6 +159,8 @@ async def permission_error(ctx, error):
             color=discord.Color.red()  # HEX: discord.Color.from_rgb(0,0,0)
         )
         await ctx.send(embed=embed, reference=ctx.message)
+
+
 
 # Informacion basica del bot
 #* Esto hay que tenerlo en cuenta, Este comando Hybrido funciona si usaras comandos de prefijo pero tambien te los añade en el command tree asi que son utiles para no repetir mucho codigo

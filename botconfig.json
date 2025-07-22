@@ -1,6 +1,6 @@
 {
     "1013956259201945702" : {
-        "prefix" : "hs$",
-        "su" : "Admin"
+        "prefix" : "tr$",
+        "su" : ["Admin"]
     }
 }
