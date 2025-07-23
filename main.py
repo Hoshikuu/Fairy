@@ -10,33 +10,62 @@ from dotenv import load_dotenv
 import sqlite3
 import csv
 import json
+from datetime import datetime
+from pytz import timezone
+from os.path import isfile
 
+# TODO: Algo de rich print para que haga prints en colores en la terminal en teoria es un momento el modulo solo habra que cambiar todo y es una pereza
 # ---------------------------------------------------------------------------------------
+# 
+# INFO-> Information
+# WARN-> Warning
+# ERRO-> Error
+# EXEP -> Exeption
+# 
+# ---------------------------------------------------------------------------------------
+
+# Funcion que devuelve la fecha y hora de ahora mismo para el debug de la terminal o cualquier otra chorrada
+def now():
+    return datetime.now(timezone("Europe/Madrid")).strftime("%Y-%m-%d %H:%M:%S")
 
 # No mires esto es secreto, alejate de esta zona del codigo te estoy mirando.
 load_dotenv()
 TOKEN = getenv("DISCORD_TOKEN")
+print(f"{now()} INFO     Token establecido.")
 
-# Carga el archivo de configuracion del bot
+# LA UNICA SOLUCION QUE HE ENCONTRADO PARA RECARGAR EL MALDITO ARCHIVO DE CONFIGURACION ME CAGO EN LA PUTA
+configJson = None
+
+# Carga el archivo de configuracion
+# Se puede llamar en ejecucion para recargar la variable que contiene el archivo de configuracion
+# A futuro no se si generara algun problema pero no encuentro otra solucion
 def ChargeConfig():
+    global configJson
     with open("botconfig.json", "r", encoding="utf-8") as file:
-        return json.load(file)
-    
-configJson = ChargeConfig()
+        configJson = json.load(file)
 
+# Cargo la informacion ya que de antes no la pude cargar porque la funcion aun no estaba definida
+ChargeConfig()
+print(f"{now()} INFO     Fichero de configuración cargado.")
+
+# Obtiene el prefijo del servidor del cual se envia el mensaje
 def GetPrefix(bot, message):
-    print(configJson[str(message.guild.id)]["prefix"])
-    return configJson[str(message.guild.id)]["prefix"]
+    guildID = str(message.guild.id)
+    prefix = configJson[guildID]["prefix"]
+    print(f"{now()} INFO     Obteniendo prefijo del servidor: {guildID} con prefijo: '{prefix}'.")
+    return prefix
 
 # ME DA PALO HACER QUE USE LOS PERMISOS ESPECIFICOS ASI QUE LE DOY TODOS LOS PERMISOS
 # Permisos del bot
 intents = discord.Intents.all()
 bot = commands.Bot(command_prefix=GetPrefix, intents=intents) # TODO: Cambia el sufijo porfavor que me cuesta escribirlo
+print(f"{now()} INFO     Permisos del Bot establecidos.")
 
 # Dependiendo de que servidor el nombre de la base de datos cambia para no filtrar informacion de un servidor en concreto
 # Conexiona la base de datos
 def DatabaseConnect(guild): # !!: Recuerda siempre pasarle el ctx.guild.id
     conn = sqlite3.connect(f"{guild}.db")
+    print(f"{now()} INFO     Conectado a la base de datos del servidor: {guild}.")
     return conn
 
 # Crea la tabla principal para almacenar la cantidad de mensajes enviados por usuario
@@ -51,6 +80,8 @@ def CreateDatabase(guild):
         cantidad INTEGER DEFAULT 0
     )
     """) # EWWWWWWWWWWWWWW SQL PUTA MIERDA
+    
+    print(f"{now()} WARN     Nueva tabla creada para el servidor: {guild}.")
     conn.commit()
 
 # Para mostrar en que servidores esta sirviendo el bot
@@ -58,43 +89,53 @@ def CreateDatabase(guild):
 # Mensaje de inicio
 @bot.event
 async def on_ready():
-    print(f"Bot conectado como {bot.user}")
     try:
         synced = await bot.tree.sync()
-        print(f"Sincronizados {len(synced)} comandos")
+        print(f"{now()} INFO     Sincronizados {len(synced)} comandos.")
     except Exception as e:
-        print(f"Error al sincronizar comandos: {e}")
+        print(f"{now()} ERRO     Error al sincronizar comandos: {e}.")
+        
+    print(f"{now()} INFO     Bot conectado como {bot.user}.")
+    
     for guild in bot.guilds:
-        print(f"Conectado al servidor: {guild.name} con id: {guild.id}")
+        print(f"{now()} INFO     Conectado al servidor: {guild.name} con id: {guild.id}.")
+        
+    print(f"{now()} INFO     BOT listo para usarse.")
 
 # Registrar cada mensaje de cada usuario exeptuando bots
 @bot.event
 async def on_message(message):
     if message.author.bot: # Se salta si es un BOT
+        print(f"{now()} WARN     Mensaje es un BOT.")
         return
     
-    # Guarda el usuario en una variable
-    user_id = message.author.id
+    # Guarda los datos del mensaje en una variable
+    userID = message.author.id
+    guildID = message.guild.id
     username = str(message.author)
     
-    CreateDatabase(message.guild.id)
+    if not isfile(f"{guildID}.db"):
+        print(f"{now()} WARN     Creando una nueva Base de Datos para {guildID}")
+        CreateDatabase(guildID)
     
-    conn = DatabaseConnect(message.guild.id)
+    conn = DatabaseConnect(guildID)
     cursor = conn.cursor()
     
     # Seleccionar los datos si no existe devuelve vacio
-    cursor.execute("SELECT cantidad FROM mensajes WHERE user_id = ?", (user_id,))
+    cursor.execute("SELECT cantidad FROM mensajes WHERE user_id = ?", (userID,))
     data = cursor.fetchone()
+    print(f"{now()} INFO     Datos obtenidos.")
     
     # PUTA MIERDA DE SQL
     if data: # Actualizar el contador de mensajes
-        nueva_cantidad = data[0] + 1
-        cursor.execute("UPDATE mensajes SET cantidad = ? WHERE user_id = ?", (nueva_cantidad, user_id))
+        newCount = data[0] + 1
+        cursor.execute("UPDATE mensajes SET cantidad = ? WHERE user_id = ?", (newCount, userID))
     else: # Añadir un nuevo registro
-        cursor.execute("INSERT INTO mensajes (user_id, username, cantidad) VALUES (?, ?, ?)", (user_id, username, 1))
+        cursor.execute("INSERT INTO mensajes (user_id, username, cantidad) VALUES (?, ?, ?)", (userID, username, 1))
 
     conn.commit()
-
+    
+    print(f"{now()} INFO     Contador actualizado.")
     await bot.process_commands(message)
 
 # TODO: Deberia pensar en un nombre mejor para este comando no me gusta esto
@@ -106,6 +147,7 @@ async def count(ctx):
     cursor = conn.cursor()
     cursor.execute("SELECT username, cantidad FROM mensajes ORDER BY cantidad DESC")
     datos = cursor.fetchall() # Obtiene los datos de cantidad de mensajes de todos los usuarios
+    print(f"{now()} INFO     Datos obtenidos.")
     
     # UFFFF EMBEDS QUE BONITOS POR DIOS
     embed = discord.Embed(
@@ -119,6 +161,7 @@ async def count(ctx):
     for i, (username, cantidad) in enumerate(datos, start=1):
         text += f"**{i}** {username} — **{cantidad} mensajes**\n"
     embed.description = text
+    print(f"{now()} INFO     Mostrando datos del contador en el Discord.")
     await ctx.send(embed=embed, reference=ctx.message)
 
 # TODO: Esta funcion se puede automatizar mas con un excel de drive de google (Buscar como hacerlo)
@@ -132,24 +175,41 @@ async def export(ctx):
     cursor = conn.cursor()
     cursor.execute("SELECT user_id, username, cantidad FROM mensajes ORDER BY cantidad DESC")
     datos = cursor.fetchall() # Obtiene todos los datos
+    print(f"{now()} INFO     Datos obtenidos.")
     
     # Chapuza que hice pero funciona, ni se si sera sostenible a futuro xd
     csvData = []
-    for i, (user_id, username, cantidad) in enumerate(datos, start=1):
-        csvData.append([user_id, username, cantidad])
+    for i, (userID, username, count) in enumerate(datos, start=1):
+        csvData.append([userID, username, count])
+    print(f"{now()} INFO     Datos en CSV creados.")
         
-    # Deberia de meter mas DEBUG de por medio no tira nada el bot
     # Guarda el archivo localmente en CSV
     with open(f"{ctx.guild.id}Export.csv", mode="w", newline="", encoding="utf-8") as file:
         writer = csv.writer(file)
         writer.writerows(datos)
-        
+    print(f"{now()} INFO     Archivo CSV creado y listo.")    
+    
     # Te envia el CSV
     await ctx.send("Exporting message count:", file=discord.File(f"{ctx.guild.id}Export.csv"), reference=ctx.message)
+
+# Funcion para cambiar el prefijo en la configuracion del bot
+# La funcion pide un argumento, el prefijo nuevo
+@bot.hybrid_command(name="setprefix", description="Establece el prefijo del bot.")
+@commands.has_any_role("Miembro")
+async def setprefix(ctx, prefix):
+    configJson[str(ctx.guild.id)]["prefix"] = prefix # El nuevo prefijo
+    with open("botconfig.json", "w") as f:
+        json.dump(configJson, f, indent=4)
+        
+    ChargeConfig() # Recarga la configuracion del bot
+    print(f"{now()} INFO     Fichero de configuracion recargado.")
+    
+    await ctx.send(f"Prefijo cambiado a: `{prefix}`", reference=ctx.message)
 
 # Esto infica si la funcion da error ejecutar esto
 @export.error
 @count.error
+@setprefix.error
 # Error de permisos, Falta de permisos
 async def permission_error(ctx, error):
     if isinstance(error, commands.MissingAnyRole): # Comprobar que falta un rol
@@ -158,9 +218,8 @@ async def permission_error(ctx, error):
             description="No tienes permisos para ejecutar este comando.",
             color=discord.Color.red()  # HEX: discord.Color.from_rgb(0,0,0)
         )
+        print(f"{now()} EXEP     Error de permiso, {ctx.author} no tiene los permisos requeridos para ejecutar este comando.")
         await ctx.send(embed=embed, reference=ctx.message)
-
-
 
 # Informacion basica del bot
 #* Esto hay que tenerlo en cuenta, Este comando Hybrido funciona si usaras comandos de prefijo pero tambien te los añade en el command tree asi que son utiles para no repetir mucho codigo
@@ -184,4 +243,5 @@ async def info(ctx: commands.Context):
     
 # Para ejecutar el bot, amego tu tener cegarro?
 if __name__ == "__main__":
+    print(f"{now()} INFO     Iniciando Bot HoyoStars.")
     bot.run(TOKEN)
