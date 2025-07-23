@@ -20,7 +20,7 @@ from os.path import isfile
 # INFO-> Information
 # WARN-> Warning
 # ERRO-> Error
-# EXEP -> Exeption
+# EXEP-> Exeption
 # 
 # ---------------------------------------------------------------------------------------
 
@@ -40,9 +40,16 @@ configJson = None
 # Se puede llamar en ejecucion para recargar la variable que contiene el archivo de configuracion
 # A futuro no se si generara algun problema pero no encuentro otra solucion
 def ChargeConfig():
+    if not isfile("botconfig.json"):
+        print(f"{now()} EXEP     Fichero de configuración no esta creado.")
+        with open("botconfig.json", "w", encoding="utf-8") as file:
+            file.write("{}")
+            print(f"{now()} INFO     Fichero de configuración creado.")
+            
     global configJson
     with open("botconfig.json", "r", encoding="utf-8") as file:
         configJson = json.load(file)
+        print(f"{now()} INFO     Cargando fichero de configuración")
 
 # Cargo la informacion ya que de antes no la pude cargar porque la funcion aun no estaba definida
 ChargeConfig()
@@ -84,6 +91,23 @@ def CreateDatabase(guild):
     print(f"{now()} WARN     Nueva tabla creada para el servidor: {guild}.")
     conn.commit()
 
+# Funcion para crear la configuracion por defecto de un servidor
+# Luego se tiene que ejecutar el comando de setup para configurar el bot
+def DefaultServerConfig(guild):
+    configJson[guild] = {
+        "setup": 0,
+        "prefix": "hs$",
+        "su": []
+    }
+    with open("botconfig.json", "w") as file:
+        json.dump(configJson, file, indent=4)
+    ChargeConfig()
+
+def CheckSetUp(ctx):
+    # Prevenir la ejecucion de comandos si no esta configurado el bot.
+    if not bool(configJson[str(ctx.guild.id)]["setup"]):
+        return True
+
 # Para mostrar en que servidores esta sirviendo el bot
 # NO LO VA A USAR NADIE PORQUE HAGO ESTO
 # Mensaje de inicio
@@ -110,9 +134,14 @@ async def on_message(message):
         return
     
     # Guarda los datos del mensaje en una variable
-    userID = message.author.id
-    guildID = message.guild.id
+    userID = str(message.author.id)
+    guildID = str(message.guild.id)
     username = str(message.author)
+    
+    if guildID not in configJson:
+        print(f"{now()} WARN     El servidor {guildID} no tiene una configuración asignada.")
+        DefaultServerConfig(guildID)
+        print(f"{now()} INFO     Configuración por defecto creada para el servidor.")
     
     if not isfile(f"{guildID}.db"):
         print(f"{now()} WARN     Creando una nueva Base de Datos para {guildID}")
@@ -124,7 +153,7 @@ async def on_message(message):
     # Seleccionar los datos si no existe devuelve vacio
     cursor.execute("SELECT cantidad FROM mensajes WHERE user_id = ?", (userID,))
     data = cursor.fetchone()
-    print(f"{now()} INFO     Datos obtenidos.")
+    print(f"{now()} INFO     Datos de la base de datos obtenidos.")
     
     # PUTA MIERDA DE SQL
     if data: # Actualizar el contador de mensajes
@@ -135,7 +164,7 @@ async def on_message(message):
 
     conn.commit()
     
-    print(f"{now()} INFO     Contador actualizado.")
+    print(f"{now()} INFO     Contador del usuario {userID} del servidor {guildID} actualizado.")
     await bot.process_commands(message)
 
 # TODO: Deberia pensar en un nombre mejor para este comando no me gusta esto
@@ -143,11 +172,16 @@ async def on_message(message):
 @bot.hybrid_command(name="count", description="Muestra el contador de mensajes.")
 @commands.has_any_role("Miembro") # Recuerda que tambien se puede usar ID de roles para mas seguridad por si se cambia el nombre
 async def count(ctx):
+    # Prevenir la ejecucion de comandos si no esta configurado el bot.
+    if CheckSetUp(ctx):
+        await ctx.send("Porfavor use el comando /setup o hs$setup, antes de ejecutar ningun comando.", reference=ctx.message)
+        return
+    
     conn = DatabaseConnect(ctx.guild.id)
     cursor = conn.cursor()
     cursor.execute("SELECT username, cantidad FROM mensajes ORDER BY cantidad DESC")
     datos = cursor.fetchall() # Obtiene los datos de cantidad de mensajes de todos los usuarios
-    print(f"{now()} INFO     Datos obtenidos.")
+    print(f"{now()} INFO     Datos de la base de datos obtenidos.")
     
     # UFFFF EMBEDS QUE BONITOS POR DIOS
     embed = discord.Embed(
@@ -171,11 +205,16 @@ async def count(ctx):
 @bot.hybrid_command(name="export", description="Exporta en un CSV el contador de mensajes.")
 @commands.has_any_role("Miembro") # Recuerda que tambien se puede usar ID de roles para mas seguridad por si se cambia el nombre
 async def export(ctx):
+    # Prevenir la ejecucion de comandos si no esta configurado el bot.
+    if CheckSetUp(ctx):
+        await ctx.send("Porfavor use el comando /setup o hs$setup, antes de ejecutar ningun comando.", reference=ctx.message)
+        return
+    
     conn = DatabaseConnect(ctx.guild.id)
     cursor = conn.cursor()
     cursor.execute("SELECT user_id, username, cantidad FROM mensajes ORDER BY cantidad DESC")
     datos = cursor.fetchall() # Obtiene todos los datos
-    print(f"{now()} INFO     Datos obtenidos.")
+    print(f"{now()} INFO     Datos de la base de datos obtenidos.")
     
     # Chapuza que hice pero funciona, ni se si sera sostenible a futuro xd
     csvData = []
@@ -197,9 +236,14 @@ async def export(ctx):
 @bot.hybrid_command(name="setprefix", description="Establece el prefijo del bot.")
 @commands.has_any_role("Miembro")
 async def setprefix(ctx, prefix):
+    # Prevenir la ejecucion de comandos si no esta configurado el bot.
+    if CheckSetUp(ctx):
+        await ctx.send("Porfavor use el comando /setup o hs$setup, antes de ejecutar ningun comando.", reference=ctx.message)
+        return
+    
     configJson[str(ctx.guild.id)]["prefix"] = prefix # El nuevo prefijo
-    with open("botconfig.json", "w") as f:
-        json.dump(configJson, f, indent=4)
+    with open("botconfig.json", "w") as file:
+        json.dump(configJson, file, indent=4)
         
     ChargeConfig() # Recarga la configuracion del bot
     print(f"{now()} INFO     Fichero de configuracion recargado.")
@@ -221,10 +265,29 @@ async def permission_error(ctx, error):
         print(f"{now()} EXEP     Error de permiso, {ctx.author} no tiene los permisos requeridos para ejecutar este comando.")
         await ctx.send(embed=embed, reference=ctx.message)
 
+# Setup del bot
+# Para la configuracion incial del bot al servidor
+#! El bot no va a ejecutar ningun comando hasta que no se ejecute el setup
+@bot.hybrid_command(name="setup", description="Hace la configuracion inicial del bot.")
+async def setup(ctx: commands.Context, prefix: str, staff: str):
+    guildID = str(ctx.guild.id)
+    configJson[guildID]["setup"] = 1
+    configJson[guildID]["prefix"] = prefix
+    configJson[guildID]["su"] = [staff]
+    with open("botconfig.json", "w") as file:
+        json.dump(configJson, file, indent=4)
+    print(f"{now()} INFO     Setup del bot completado en el servidor {guildID}.")
+    await ctx.send("Setup del bot completado.", reference=ctx.message)
+    
 # Informacion basica del bot
 #* Esto hay que tenerlo en cuenta, Este comando Hybrido funciona si usaras comandos de prefijo pero tambien te los añade en el command tree asi que son utiles para no repetir mucho codigo
 @bot.hybrid_command(name="info", description="Muestra la información básica del bot")
 async def info(ctx: commands.Context):
+    # Prevenir la ejecucion de comandos si no esta configurado el bot.
+    if CheckSetUp(ctx):
+        await ctx.send("Porfavor use el comando /setup o hs$setup, antes de ejecutar ningun comando.", reference=ctx.message)
+        return
+        
     embed = discord.Embed(
         title="HoyoStars",
         description="Un bot privado para el servidor HoyoStars.",
