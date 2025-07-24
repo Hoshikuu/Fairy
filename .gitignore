@@ -2,3 +2,6 @@
 .env
 *.csv
 *.db
+temp.txt
+service_account.json
+excel.py

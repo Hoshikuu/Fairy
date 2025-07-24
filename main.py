@@ -6,13 +6,20 @@ from discord.ext import commands
 from os import getenv
 from dotenv import load_dotenv
 
+# Conexion con el drive de google
+from google.oauth2 import service_account
+from googleapiclient.discovery import build
+from googleapiclient.http import MediaIoBaseDownload, MediaFileUpload
+
 # Modulos adicionales
-import sqlite3
-import csv
-import json
 from datetime import datetime
 from pytz import timezone
 from os.path import isfile
+from json import dump, load
+from csv import writer
+import sqlite3
+import pandas as pd
+import io, os, gc
 
 # TODO: Algo de rich print para que haga prints en colores en la terminal en teoria es un momento el modulo solo habra que cambiar todo y es una pereza
 # ---------------------------------------------------------------------------------------
@@ -48,7 +55,7 @@ def ChargeConfig():
             
     global configJson
     with open("botconfig.json", "r", encoding="utf-8") as file:
-        configJson = json.load(file)
+        configJson = load(file)
         print(f"{now()} INFO     Cargando fichero de configuración")
 
 # Cargo la informacion ya que de antes no la pude cargar porque la funcion aun no estaba definida
@@ -100,7 +107,7 @@ def DefaultServerConfig(guild):
         "su": []
     }
     with open("botconfig.json", "w") as file:
-        json.dump(configJson, file, indent=4)
+        dump(configJson, file, indent=4)
     ChargeConfig()
 
 def CheckSetUp(ctx):
@@ -224,7 +231,7 @@ async def export(ctx):
         
     # Guarda el archivo localmente en CSV
     with open(f"{ctx.guild.id}Export.csv", mode="w", newline="", encoding="utf-8") as file:
-        writer = csv.writer(file)
+        writer = writer(file)
         writer.writerows(datos)
     print(f"{now()} INFO     Archivo CSV creado y listo.")    
     
@@ -243,7 +250,7 @@ async def setprefix(ctx, prefix):
     
     configJson[str(ctx.guild.id)]["prefix"] = prefix # El nuevo prefijo
     with open("botconfig.json", "w") as file:
-        json.dump(configJson, file, indent=4)
+        dump(configJson, file, indent=4)
         
     ChargeConfig() # Recarga la configuracion del bot
     print(f"{now()} INFO     Fichero de configuracion recargado.")
@@ -275,7 +282,7 @@ async def setup(ctx: commands.Context, prefix: str, staff: str):
     configJson[guildID]["prefix"] = prefix
     configJson[guildID]["su"] = [staff]
     with open("botconfig.json", "w") as file:
-        json.dump(configJson, file, indent=4)
+        dump(configJson, file, indent=4)
     print(f"{now()} INFO     Setup del bot completado en el servidor {guildID}.")
     await ctx.send("Setup del bot completado.", reference=ctx.message)
     
