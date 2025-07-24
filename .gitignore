@@ -5,3 +5,4 @@
 temp.txt
 service_account.json
 excel.py
+__pycache__

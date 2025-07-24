@@ -7,9 +7,9 @@ from os import getenv
 from dotenv import load_dotenv
 
 # Conexion con el drive de google
-from google.oauth2 import service_account
-from googleapiclient.discovery import build
-from googleapiclient.http import MediaIoBaseDownload, MediaFileUpload
+# from google.oauth2 import service_account
+# from googleapiclient.discovery import build
+# from googleapiclient.http import MediaIoBaseDownload, MediaFileUpload
 
 # Modulos adicionales
 from datetime import datetime
@@ -18,8 +18,8 @@ from os.path import isfile
 from json import dump, load
 from csv import writer
 import sqlite3
-import pandas as pd
-import io, os, gc
+# import pandas as pd
+# import io, os, gc
 
 # TODO: Algo de rich print para que haga prints en colores en la terminal en teoria es un momento el modulo solo habra que cambiar todo y es una pereza
 # ---------------------------------------------------------------------------------------
