@@ -3,7 +3,7 @@ from discord.ext import commands
 
 from func.botconfig import CheckSetUp
 
-class Info(commands.Cog):
+class About(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
@@ -33,4 +33,4 @@ class Info(commands.Cog):
         await ctx.send(embed=embed)
 
 async def setup(bot):
-    await bot.add_cog(Info(bot))
+    await bot.add_cog(About(bot))

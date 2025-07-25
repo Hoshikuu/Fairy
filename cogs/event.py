@@ -18,6 +18,10 @@ class Event(commands.Cog):
             print(f"{now()} WARN     Mensaje es un BOT.")
             return
         
+        # Para evitar que doble ejecute el comando
+        if message.content.startswith(tuple(await self.bot.get_prefix(message))):
+            return
+        
         # Guarda los datos del mensaje en una variable
         userID = str(message.author.id)
         guildID = str(message.guild.id)

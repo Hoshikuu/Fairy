@@ -49,6 +49,7 @@ async def on_ready():
 async def cargar_cogs():
     for archivo in listdir("./cogs"):
         if archivo.endswith(".py"):
+            print(archivo)
             await bot.load_extension(f"cogs.{archivo[:-3]}")
     
 async def main():
