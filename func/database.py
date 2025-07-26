@@ -1,27 +1,36 @@
 # Modulo para manejar la base de datos
 from sqlite3 import connect
 
+# Modulos extra
+from os.path import isfile
+
 # Modulo de funciones
-from func.terminal import now
+from func.terminal import printr
 
 # Conecta a la base de datos dependiendo del id del servidor, si no existe lo crea
 def DatabaseConnect(guild): # !!: Recuerda siempre pasarle el ctx.guild.id
+    if not isfile(f"database/{guild}.db"):
+        printr(f"Creando una nueva Base de Datos para {guild}", 2)
+        CreateDatabase(guild)
+
     conn = connect(f"database/{guild}.db")
-    print(f"{now()} INFO     Conectado a la base de datos del servidor: {guild}.")
+    printr(f"Conectado a la base de datos del servidor: {guild}.", 1)
     return conn
 
 # Crea la tabla principal para almacenar la cantidad de mensajes enviados por usuario y demas
 def CreateDatabase(guild):
-    conn = DatabaseConnect(guild)
+    conn = connect(f"database/{guild}.db")
     cursor = conn.cursor()
 
     cursor.execute("""
-    CREATE TABLE IF NOT EXISTS mensajes (
-        user_id INTEGER PRIMARY KEY,
+    CREATE TABLE IF NOT EXISTS data (
+        id INTEGER PRIMARY KEY,
         username TEXT,
-        cantidad INTEGER DEFAULT 0
+        date TEXT,
+        messages INTEGER DEFAULT 0,
+        voicechat FLOAT DEFAULT 0
     )
     """)
     
-    print(f"{now()} WARN     Nueva tabla creada para el servidor: {guild}.")
+    printr(f"Nueva tabla creada para el servidor: {guild}.", 2)
     conn.commit()

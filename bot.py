@@ -8,26 +8,26 @@ from asyncio import run
 
 # Modulo de funciones
 from config import GetToken
-from func.terminal import now
+from func.terminal import printr
 from func.botconfig import GetPrefix, ChargeConfig
 
 # TODO: Añadir el Rich a la terminal para un mejor output
 # --------------------
-# INFO-> Information
-# WARN-> Warning
-# ERRO-> Error
-# EXEP-> Exeption
+# 1 -> INFO -> Information
+# 2 -> WARN -> Warning
+# 3 -> ERRO -> Error
+# 4 -> EXEP -> Exeption
 # --------------------
 
 #* Se carga antes de inicializar el bot, para evitar problemas con la variable de configuracion en otro script
 ChargeConfig()
-print(f"{now()} INFO     Fichero de configuración cargado.")
+printr(f"Fichero de configuración cargado.", 1)
 
 # El bot obtiene todos los permisos disponibles
 # TODO: Investigar para asignar solo los permisos necesarios
 intents = discord.Intents.all()
 bot = commands.Bot(command_prefix=GetPrefix, intents=intents)
-print(f"{now()} INFO     Permisos del Bot establecidos.")
+printr(f"Permisos del Bot establecidos.", 1)
 
 # Mensaje que se muestra cuando el bot esta iniciado
 # Muestra los comandos sincronizados en el command tree del discord
@@ -36,32 +36,32 @@ print(f"{now()} INFO     Permisos del Bot establecidos.")
 async def on_ready():
     try:
         synced = await bot.tree.sync()
-        print(f"{now()} INFO     Sincronizados {len(synced)} comandos.")
+        printr(f"Sincronizados {len(synced)} comandos.", 1)
     except Exception as e:
-        print(f"{now()} ERRO     Error al sincronizar comandos: {e}.")
+        printr(f"Error al sincronizar comandos: {e}.", 3)
         
-    print(f"{now()} INFO     Bot conectado como {bot.user}.")
+    printr(f"Bot conectado como {bot.user}.", 1)
     
     for guild in bot.guilds:
-        print(f"{now()} INFO     Conectado al servidor: {guild.name} con id: {guild.id}.")
+        printr(f"Conectado al servidor: {guild.name} con id: {guild.id}.", 1)
         
-    print(f"{now()} INFO     BOT listo para usarse.")
+    printr(f"BOT listo para usarse.", 1)
 
 # Carga los cogs del bot automaticamente
 async def ChargeCogs():
     for cog in listdir("./cogs"):
         if cog.endswith(".py"): # Busca los archivos de python y los carga al bot
-            print(f"{now()} INFO     Cargando el archivo {cog} al bot.")
+            printr(f"Cargando el archivo {cog} al bot.", 1)
             await bot.load_extension(f"cogs.{cog[:-3]}")
 
 # Funcion principal para ejecutar el bot
 async def main():
     async with bot:
         await ChargeCogs()
-        print(f"{now()} INFO     Cogs cargados correctamente al bot.")
+        printr(f"Cogs cargados correctamente al bot.", 1)
         await bot.start(GetToken())
 
 # Inicia el bot
 if __name__ == "__main__":
-    print(f"{now()} INFO     Iniciando Bot HoyoStars.")
+    printr(f"Iniciando Bot HoyoStars.", 1)
     run(main())

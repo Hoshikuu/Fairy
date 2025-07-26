@@ -7,7 +7,7 @@ from json import dump
 
 # Modulo de funciones
 from func.botconfig import configJson, CheckSetUp, ChargeConfig
-from func.terminal import now
+from func.terminal import printr
 
 # Para comandos que esten relacionados a la configuracion del bot
 class Settings(commands.Cog):
@@ -27,7 +27,7 @@ class Settings(commands.Cog):
         with open("botconfig.json", "w") as file:
             dump(configJson, file, indent=4)
         
-        print(f"{now()} INFO     Setup del bot completado en el servidor {guildID}.")
+        printr(f"Setup del bot completado en el servidor {guildID}.", 1)
         ChargeConfig() # Recarga la configuracion del bot
 
         await ctx.send("Setup del bot completado.", reference=ctx.message)
@@ -46,7 +46,7 @@ class Settings(commands.Cog):
         with open("botconfig.json", "w") as file:
             dump(configJson, file, indent=4)
         
-        print(f"{now()} INFO     Prefijo del servidor {ctx.guild.id} cambiado a {prefix}.")
+        printr(f"Prefijo del servidor {ctx.guild.id} cambiado a {prefix}.", 1)
         ChargeConfig() # Recarga la configuracion del bot
         
         await ctx.send(f"Prefijo cambiado a: `{prefix}`", reference=ctx.message)
@@ -60,7 +60,7 @@ class Settings(commands.Cog):
                 description="No tienes permisos para ejecutar este comando.",
                 color=discord.Color.red()  # HEX: discord.Color.from_rgb(0,0,0)
             )
-            print(f"{now()} EXEP     Error de permiso, {ctx.author} no tiene los permisos requeridos para ejecutar este comando.")
+            printr(f"Error de permiso, {ctx.author} no tiene los permisos requeridos para ejecutar este comando.", 4)
             await ctx.send(embed=embed, reference=ctx.message)
 
 # Autorun
