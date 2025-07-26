@@ -3,7 +3,7 @@
         "setup": 1,
         "prefix": "hs$",
         "su": [
-            "Admin"
+            "Miembro"
         ]
     }
 }

@@ -1,35 +1,37 @@
+# Modulos de discord para manejar el Bot
 import discord
 from discord.ext import commands
-from func.terminal import now
-from func.botconfig import GetPrefix
-from config import GetToken
+
+# Modulos Extras
 from os import listdir
+from asyncio import run
 
-from func.botconfig import ChargeConfig
+# Modulo de funciones
+from config import GetToken
+from func.terminal import now
+from func.botconfig import GetPrefix, ChargeConfig
 
-# TODO: Algo de rich print para que haga prints en colores en la terminal en teoria es un momento el modulo solo habra que cambiar todo y es una pereza
-# ---------------------------------------------------------------------------------------
-# 
+# TODO: Añadir el Rich a la terminal para un mejor output
+# --------------------
 # INFO-> Information
 # WARN-> Warning
 # ERRO-> Error
 # EXEP-> Exeption
-# 
-# ---------------------------------------------------------------------------------------
+# --------------------
 
-# ME DA PALO HACER QUE USE LOS PERMISOS ESPECIFICOS ASI QUE LE DOY TODOS LOS PERMISOS
-# Permisos del bot
-intents = discord.Intents.all()
-bot = commands.Bot(command_prefix=GetPrefix, intents=intents) # TODO: Cambia el sufijo porfavor que me cuesta escribirlo
-print(f"{now()} INFO     Permisos del Bot establecidos.")
-
-# Cargo la informacion ya que de antes no la pude cargar porque la funcion aun no estaba definida
+#* Se carga antes de inicializar el bot, para evitar problemas con la variable de configuracion en otro script
 ChargeConfig()
 print(f"{now()} INFO     Fichero de configuración cargado.")
 
-# Para mostrar en que servidores esta sirviendo el bot
-# NO LO VA A USAR NADIE PORQUE HAGO ESTO
-# Mensaje de inicio
+# El bot obtiene todos los permisos disponibles
+# TODO: Investigar para asignar solo los permisos necesarios
+intents = discord.Intents.all()
+bot = commands.Bot(command_prefix=GetPrefix, intents=intents)
+print(f"{now()} INFO     Permisos del Bot establecidos.")
+
+# Mensaje que se muestra cuando el bot esta iniciado
+# Muestra los comandos sincronizados en el command tree del discord
+# Muestra en los servidores que esta sirviendo el bot
 @bot.event
 async def on_ready():
     try:
@@ -45,18 +47,21 @@ async def on_ready():
         
     print(f"{now()} INFO     BOT listo para usarse.")
 
-# Cargar automáticamente todos los cogs de la carpeta "cogs"
-async def cargar_cogs():
-    for archivo in listdir("./cogs"):
-        if archivo.endswith(".py"):
-            print(archivo)
-            await bot.load_extension(f"cogs.{archivo[:-3]}")
-    
+# Carga los cogs del bot automaticamente
+async def ChargeCogs():
+    for cog in listdir("./cogs"):
+        if cog.endswith(".py"): # Busca los archivos de python y los carga al bot
+            print(f"{now()} INFO     Cargando el archivo {cog} al bot.")
+            await bot.load_extension(f"cogs.{cog[:-3]}")
+
+# Funcion principal para ejecutar el bot
 async def main():
     async with bot:
-        await cargar_cogs()
-        print(f"{now()} INFO     Iniciando Bot HoyoStars.")
+        await ChargeCogs()
+        print(f"{now()} INFO     Cogs cargados correctamente al bot.")
         await bot.start(GetToken())
 
-import asyncio
-asyncio.run(main())
+# Inicia el bot
+if __name__ == "__main__":
+    print(f"{now()} INFO     Iniciando Bot HoyoStars.")
+    run(main())

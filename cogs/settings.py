@@ -1,26 +1,35 @@
+# Modulos de discord
 import discord
 from discord.ext import commands
+
+# Modulo para el JSON
 from json import dump
 
+# Modulo de funciones
 from func.botconfig import configJson, CheckSetUp, ChargeConfig
 from func.terminal import now
 
+# Para comandos que esten relacionados a la configuracion del bot
 class Settings(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    # Setup del bot
-    # Para la configuracion incial del bot al servidor
-    #! El bot no va a ejecutar ningun comando hasta que no se ejecute el setup
+    # Ejecutar el comando para poder usar otros comandos
+    # Pide de argumentos la configuracion basica
     @commands.bot.hybrid_command(name="setup", description="Hace la configuracion inicial del bot.")
     async def setup(self, ctx: commands.Context, prefix: str, staff: str):
         guildID = str(ctx.guild.id)
         configJson[guildID]["setup"] = 1
         configJson[guildID]["prefix"] = prefix
         configJson[guildID]["su"] = [staff]
+
+        # Guardar la nueva configuracion
         with open("botconfig.json", "w") as file:
             dump(configJson, file, indent=4)
+        
         print(f"{now()} INFO     Setup del bot completado en el servidor {guildID}.")
+        ChargeConfig() # Recarga la configuracion del bot
+
         await ctx.send("Setup del bot completado.", reference=ctx.message)
 
     # Funcion para cambiar el prefijo en la configuracion del bot
@@ -36,9 +45,9 @@ class Settings(commands.Cog):
         configJson[str(ctx.guild.id)]["prefix"] = prefix # El nuevo prefijo
         with open("botconfig.json", "w") as file:
             dump(configJson, file, indent=4)
-            
+        
+        print(f"{now()} INFO     Prefijo del servidor {ctx.guild.id} cambiado a {prefix}.")
         ChargeConfig() # Recarga la configuracion del bot
-        print(f"{now()} INFO     Fichero de configuracion recargado.")
         
         await ctx.send(f"Prefijo cambiado a: `{prefix}`", reference=ctx.message)
 
@@ -54,5 +63,6 @@ class Settings(commands.Cog):
             print(f"{now()} EXEP     Error de permiso, {ctx.author} no tiene los permisos requeridos para ejecutar este comando.")
             await ctx.send(embed=embed, reference=ctx.message)
 
+# Autorun
 async def setup(bot):
     await bot.add_cog(Settings(bot))

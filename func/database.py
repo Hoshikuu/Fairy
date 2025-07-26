@@ -1,14 +1,16 @@
-import sqlite3
+# Modulo para manejar la base de datos
+from sqlite3 import connect
+
+# Modulo de funciones
 from func.terminal import now
 
-# Dependiendo de que servidor el nombre de la base de datos cambia para no filtrar informacion de un servidor en concreto
-# Conexiona la base de datos
+# Conecta a la base de datos dependiendo del id del servidor, si no existe lo crea
 def DatabaseConnect(guild): # !!: Recuerda siempre pasarle el ctx.guild.id
-    conn = sqlite3.connect(f"{guild}.db")
+    conn = connect(f"database/{guild}.db")
     print(f"{now()} INFO     Conectado a la base de datos del servidor: {guild}.")
     return conn
 
-# Crea la tabla principal para almacenar la cantidad de mensajes enviados por usuario
+# Crea la tabla principal para almacenar la cantidad de mensajes enviados por usuario y demas
 def CreateDatabase(guild):
     conn = DatabaseConnect(guild)
     cursor = conn.cursor()
@@ -19,7 +21,7 @@ def CreateDatabase(guild):
         username TEXT,
         cantidad INTEGER DEFAULT 0
     )
-    """) # EWWWWWWWWWWWWWW SQL PUTA MIERDA
+    """)
     
     print(f"{now()} WARN     Nueva tabla creada para el servidor: {guild}.")
     conn.commit()

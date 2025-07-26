@@ -1,6 +1,9 @@
+# Modulos para obtener el tiempo
 from datetime import datetime
 from pytz import timezone
 
-# Funcion que devuelve la fecha y hora de ahora mismo para el debug de la terminal o cualquier otra chorrada
+# TODO: Aqui iran las funcione que hagan cosas en la terminal 
+
+# Funcion para saber la fecha y hora actual de Madrid
 def now():
     return datetime.now(timezone("Europe/Madrid")).strftime("%Y-%m-%d %H:%M:%S")

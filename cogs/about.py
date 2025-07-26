@@ -1,8 +1,11 @@
+# Modulos de discord
 import discord
 from discord.ext import commands
 
+# Modulos de funciones
 from func.botconfig import CheckSetUp
 
+# Comandos que muestran cosas sobre el bot
 class About(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -32,5 +35,6 @@ class About(commands.Cog):
 
         await ctx.send(embed=embed)
 
+# Autorun
 async def setup(bot):
     await bot.add_cog(About(bot))
