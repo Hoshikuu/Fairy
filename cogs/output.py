@@ -5,7 +5,7 @@ from discord.ext import commands
 from csv import writer as csvwriter
 
 from func.database import DatabaseConnect
-from func.botconfig import CheckSetUp
+from func.botconfig import CheckSetUp, IsSU
 from func.terminal import printr
 
 # Template for cog
@@ -22,7 +22,7 @@ class Output(commands.Cog):
     # Añadir otras cosas como fecha de union, horas en vc y demas introducirlas directamente a la hoja del excel y que el excel se encargue de calcular el porcentaje
     # Funcion para exportar los datos actuales a CSV y enviarlas por chat (Actual) cambia a futuro
     @commands.hybrid_command(name="export", description="Exporta en un CSV el contador de mensajes.")
-    @commands.has_any_role("Miembro") # Recuerda que tambien se puede usar ID de roles para mas seguridad por si se cambia el nombre
+    @IsSU() # Funcion para comprobar si el usuario tiene el de super usuario
     async def export(self, ctx):
         # Prevenir la ejecucion de comandos si no esta configurado el bot.
         if CheckSetUp(ctx):

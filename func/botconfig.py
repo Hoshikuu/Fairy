@@ -1,3 +1,5 @@
+from discord.ext import commands
+
 # Modulos para gestionar JSON
 from json import load, dump
 from os.path import isfile
@@ -30,6 +32,24 @@ def GetPrefix(bot, message):
     guildID = str(message.guild.id)
     prefix = configJson[guildID]["prefix"]
     return prefix
+
+# Devuelve true si el usuario tiene los roles indicados en la configuracion del servidor
+def IsSU():
+    async def predicate(ctx):
+        guildID = str(ctx.guild.id)
+        suRoles = configJson[guildID]["su"]
+
+        # Verificar por IDs de roles (recomendado)
+        if any(role.id in suRoles for role in ctx.author.roles):
+            return True
+
+        # (Opcional) Verificar por nombres de roles si los guardas como texto
+        if any(role.name in suRoles for role in ctx.author.roles):
+            return True
+
+        raise commands.MissingAnyRole(suRoles)
+
+    return commands.check(predicate)
 
 # Se llama a esta funcion cuando un servidor no esta registrado en el json
 #! Esta funcion recarga la variable de configuracion ya que añade un servidor nuevo

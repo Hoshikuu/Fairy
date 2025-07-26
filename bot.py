@@ -11,6 +11,8 @@ from config import GetToken
 from func.terminal import printr
 from func.botconfig import GetPrefix, ChargeConfig
 
+# TODO: Añadir embeds a los mensajes enviados de vuelta
+
 # TODO: Añadir el Rich a la terminal para un mejor output
 # --------------------
 # 1 -> INFO -> Information

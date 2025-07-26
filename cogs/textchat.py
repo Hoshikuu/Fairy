@@ -3,7 +3,7 @@ import discord
 from discord.ext import commands
 
 # Modulo de funciones
-from func.botconfig import CheckSetUp
+from func.botconfig import CheckSetUp, IsSU
 from func.terminal import printr
 from func.database import DatabaseConnect
 
@@ -15,7 +15,7 @@ class Textchat(commands.Cog):
     # TODO: Deberia pensar en un nombre mejor para este comando no me gusta esto
     # Comando para mostrar el contador de mensajes de cada usuario
     @commands.hybrid_command(name="count", description="Muestra el contador de mensajes.")
-    @commands.has_any_role("Miembro") # Recuerda que tambien se puede usar ID de roles para mas seguridad por si se cambia el nombre
+    @IsSU() # Funcion para comprobar si el usuario tiene el de super usuario
     async def count(self, ctx):
         # Prevenir la ejecucion de comandos si no esta configurado el bot.
         if CheckSetUp(ctx):
@@ -43,8 +43,6 @@ class Textchat(commands.Cog):
         embed.description = text
         printr(f"Mostrando datos del contador en el Discord.", 1)
         await ctx.send(embed=embed, reference=ctx.message)
-
-
 
     # Esto indica si la funcion da error ejecutar esto
     @count.error
