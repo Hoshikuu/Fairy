@@ -14,7 +14,6 @@ def DatabaseConnect(guild): # !!: Recuerda siempre pasarle el ctx.guild.id
         CreateDatabase(guild)
 
     conn = connect(f"database/{guild}.db")
-    printr(f"Conectado a la base de datos del servidor: {guild}.", 1)
     return conn
 
 # Crea la tabla principal para almacenar la cantidad de mensajes enviados por usuario y demas

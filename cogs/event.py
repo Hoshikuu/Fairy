@@ -4,7 +4,7 @@ from discord.ext import commands
 
 # Modulo de funciones
 from func.terminal import printr
-from func.botconfig import configJson, DefaultServerConfig
+from func.botconfig import configJson, DefaultServerConfig, GetPrefix
 from func.database import CreateDatabase, DatabaseConnect
 
 # Comandos relacionados con eventos de discord
@@ -31,7 +31,7 @@ class Event(commands.Cog):
             DefaultServerConfig(guildID)
 
         # Para evitar que doble ejecute el comando
-        if message.content.startswith(tuple(await self.bot.get_prefix(message))):
+        if message.content[:len(GetPrefix(self.bot, message))] == GetPrefix(self.bot, message):
             printr(f"Mensaje es un Comando.", 2)
             return
 

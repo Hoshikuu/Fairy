@@ -4,6 +4,9 @@ from discord.ext import commands
 
 from csv import writer as csvwriter
 
+import gspread
+import csv
+
 from func.database import DatabaseConnect
 from func.botconfig import CheckSetUp, IsSU
 from func.terminal import printr
@@ -23,7 +26,7 @@ class Output(commands.Cog):
     # Funcion para exportar los datos actuales a CSV y enviarlas por chat (Actual) cambia a futuro
     @commands.hybrid_command(name="export", description="Exporta en un CSV el contador de mensajes.")
     @IsSU() # Funcion para comprobar si el usuario tiene el de super usuario
-    async def export(self, ctx):
+    async def export(self, ctx, excel, sheet):
         # Prevenir la ejecucion de comandos si no esta configurado el bot.
         if CheckSetUp(ctx):
             await ctx.send("Porfavor use el comando /setup o hs$setup, antes de ejecutar ningun comando.", reference=ctx.message)
@@ -37,17 +40,36 @@ class Output(commands.Cog):
         # Lo guarda en un CSV
         csvData = []
         for i, (userID, username, date, messages, voicechat) in enumerate(datos, start=1):
-            csvData.append([userID, date, voicechat, messages, username])
+            csvData.append([userID, username, date, messages, f"{round(voicechat, 2):.2f}".replace(".", ",")])
         printr(f"Datos en CSV creados.", 1)
             
         # Guarda el archivo localmente en CSV
         with open(f"csv/export-{ctx.guild.id}.csv", mode="w", newline="", encoding="utf-8") as file:
-            writer = csvwriter(file)
-            writer.writerows(datos)
+            writer = csvwriter(file, delimiter=";")
+            writer.writerows(csvData)
         printr(f"Archivo CSV creado y listo.", 1)
         
+        gc = gspread.service_account(filename="credentials.json")
+        spreadsheet = gc.open(excel)
+        worksheet = spreadsheet.worksheet(sheet)
+        
+        user, date, messages, voicechat = [], [], [], []
+        with open(f"csv/export-{ctx.guild.id}.csv", "r", encoding="utf-8") as f:
+            reader = csv.reader(f, delimiter=";")
+            for row in reader:
+                user.append([row[1]])
+                date.append([row[2]])
+                messages.append([row[3]])
+                voicechat.append([row[4]])
+        worksheet.update(date, f"A2:A{2 + len(date) - 1}")
+        worksheet.update(voicechat, f"B2:B{2 + len(voicechat) - 1}")
+        worksheet.update(messages, f"C2:C{2 + len(messages) - 1}")
+        worksheet.update(user, f"F2:F{2 + len(user) - 1}")
+        
+        printr(f"Datos exportados correctamente al Excel: {worksheet.url}", 1)
+        
         # Te envia el CSV
-        await ctx.send("Exporting message count:", file=discord.File(f"csv/export-{ctx.guild.id}.csv"), reference=ctx.message)
+        await ctx.send(f"Datos exportados correctamente al Excel: {worksheet.url}", reference=ctx.message)
 
     # Esto indica si la funcion da error ejecutar esto
     @export.error

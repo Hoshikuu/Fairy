@@ -1,3 +1,4 @@
 discord.py >= 2.5.2
 dotenv >= 0.9.9
 pytz >= 2025.2
+gspread >= 6.2.1
