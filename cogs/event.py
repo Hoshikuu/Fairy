@@ -2,15 +2,20 @@
 import discord
 from discord.ext import commands
 
+from time import time
+
 # Modulo de funciones
 from func.terminal import printr
 from func.botconfig import configJson, DefaultServerConfig, GetPrefix
-from func.database import CreateDatabase, DatabaseConnect
+from func.database import DatabaseConnect
+
+from templates.views import TicketView
 
 # Comandos relacionados con eventos de discord
 class Event(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.voiceSessions = {}
     
     # Registrar cada mensaje de cada usuario exeptuando bots y comandos
     @commands.Cog.listener()
@@ -52,6 +57,46 @@ class Event(commands.Cog):
         
         printr(f"Contado mensaje del usuario {userID} en el servidor {guildID}.", 1)
         await self.bot.process_commands(message) # Necesario en on_message para que se ejecute sin error
+
+    @commands.Cog.listener()
+    async def on_voice_state_update(self, member, before, after):
+        userID = member.id
+        guildID = member.guild.id
+
+        if before.channel is None and after.channel is not None:
+            self.voiceSessions[userID] = time()
+
+        elif before.channel is not None and after.channel is None:
+            if userID in self.voiceSessions:
+
+                startTime = self.voiceSessions.pop(userID)
+                sessionHours = float(time() - startTime) / 360
+
+                conn = DatabaseConnect(guildID)
+                cursor = conn.cursor()
+
+                # Seleccionar los datos si no existe devuelve vacio
+                cursor.execute("SELECT voicechat FROM data WHERE id = ?", (userID,))
+                data = cursor.fetchone()
+                
+                if data: # Actualizar el contador de mensajes 
+                    cursor.execute("UPDATE data SET voicechat = ? WHERE id = ?", (sessionHours, userID))
+                else: # Añadir un nuevo registro si el usuario no existe
+                    cursor.execute("INSERT INTO data (id, username, date, messages, voicechat) VALUES (?, ?, ?, ?, ?)", (userID, member.display_name, member.joined_at.strftime("%d/%m/%Y"), 1, 0))
+
+                conn.commit()
+                printr(f"Tiempo de chat de voz añadido al usuario {userID} en el servidor {guildID}.", 1)
+
+    @commands.Cog.listener()
+    async def on_guild_channel_create(self, channel):
+        # Verificamos si el canal pertenece a la categoría de tickets
+        if channel.category_id == 1399398958677364860:
+            embed = discord.Embed(
+                title="Contestador Automático",
+                description="Esto es un contestador automático, elige una de las opciónes siguientes.",
+                color=discord.Color.purple()
+            )
+            await channel.send(embed=embed, view=TicketView())
 
 # Autorun
 async def setup(bot):
