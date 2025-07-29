@@ -27,6 +27,13 @@ def ChargeConfig():
         configJson = load(file)
         printr(f"Cargando fichero de configuración", 1)
 
+# Comprobar que se haya ejecutado el comando setup en el servidor
+def CheckSetUp(ctx):
+    # Principalmente la razon de esto, es para prevenir el uso de comandos cuando el bot aun no esta configurado
+    # Las funciones de contar mensajes y demas que no requieran ejecutar ningun comando seguiran funcionando
+    if not bool(configJson[str(ctx.guild.id)]["setup"]):
+        return True
+
 # Obtener el prefijo del servidor en la cual se esta enviando el mensaje a travez de la variable global
 def GetPrefix(bot, message):
     guildID = str(message.guild.id)
@@ -38,17 +45,13 @@ def IsSU():
     async def predicate(ctx):
         guildID = str(ctx.guild.id)
         suRoles = configJson[guildID]["su"]
-
         # Verificar por IDs de roles (recomendado)
         if any(role.id in suRoles for role in ctx.author.roles):
             return True
-
         # (Opcional) Verificar por nombres de roles si los guardas como texto
         if any(role.name in suRoles for role in ctx.author.roles):
             return True
-
         raise commands.MissingAnyRole(suRoles)
-
     return commands.check(predicate)
 
 # Se llama a esta funcion cuando un servidor no esta registrado en el json
@@ -66,10 +69,3 @@ def DefaultServerConfig(guild):
 
     printr(f"Configuración por defecto creada para el servidor.", 1)
     ChargeConfig() # Recarga la configuración
-
-# Comprobar que se haya ejecutado el comando setup en el servidor
-def CheckSetUp(ctx):
-    # Principalmente la razon de esto, es para prevenir el uso de comandos cuando el bot aun no esta configurado
-    # Las funciones de contar mensajes y demas que no requieran ejecutar ningun comando seguiran funcionando
-    if not bool(configJson[str(ctx.guild.id)]["setup"]):
-        return True

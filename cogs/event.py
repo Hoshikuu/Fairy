@@ -9,13 +9,18 @@ from func.terminal import printr
 from func.botconfig import configJson, DefaultServerConfig, GetPrefix
 from func.database import DatabaseConnect
 
-from templates.views import TicketView
+from templates.views import VerificationView
 
 # Comandos relacionados con eventos de discord
 class Event(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.voiceSessions = {}
+    
+    @commands.Cog.listener()
+    async def on_ready(self):
+        self.bot.add_view((VerificationView()))
+        print("[View persistente] PostCloseOptionsView cargada.")
     
     # Registrar cada mensaje de cada usuario exeptuando bots y comandos
     @commands.Cog.listener()
@@ -91,12 +96,13 @@ class Event(commands.Cog):
     async def on_guild_channel_create(self, channel):
         # Verificamos si el canal pertenece a la categoría de tickets
         if channel.category_id == 1399398958677364860:
-            embed = discord.Embed(
-                title="Contestador Automático",
-                description="Esto es un contestador automático, elige una de las opciónes siguientes.",
-                color=discord.Color.purple()
-            )
-            await channel.send(embed=embed, view=TicketView())
+            if str(channel.name).split("-")[0] == "verificacion":
+                embed = discord.Embed(
+                    title="Verificación",
+                    description="Para comenzar la verificación porfavor inicia el proceso.",
+                    color=discord.Color.purple()
+                )
+                await channel.send(f"<@{channel.topic}>", embed=embed, view=VerificationView())
 
 # Autorun
 async def setup(bot):

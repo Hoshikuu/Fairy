@@ -16,7 +16,7 @@ class Settings(commands.Cog):
 
     # Ejecutar el comando para poder usar otros comandos
     # Pide de argumentos la configuracion basica
-    @commands.bot.hybrid_command(name="settings_setup", description="Hace la configuracion inicial del bot.")
+    @commands.bot.hybrid_command(name="setup", description="Hace la configuracion inicial del bot.")
     async def setup(self, ctx: commands.Context, prefix: str, su: str):
         # Prevenir la ejecucion del comando si esta configurado el bot.
         if not CheckSetUp(ctx):
@@ -66,7 +66,7 @@ class Settings(commands.Cog):
             await ctx.send("Porfavor use el comando /setup o hs$setup, antes de ejecutar ningun comando.", reference=ctx.message)
             return
         
-        configJson[str(ctx.guild.id)]["su"] = su.split(",") # El nuevo prefijo
+        configJson[str(ctx.guild.id)]["su"] = su.split(",")
         with open("botconfig.json", "w") as file:
             dump(configJson, file, indent=4)
         

@@ -11,8 +11,6 @@ from config import GetToken
 from func.terminal import printr
 from func.botconfig import GetPrefix, ChargeConfig
 
-from templates.views import PanelView, TicketView
-
 # TODO: Añadir embeds a los mensajes enviados de vuelta
 
 # TODO: Añadir el Rich a la terminal para un mejor output
