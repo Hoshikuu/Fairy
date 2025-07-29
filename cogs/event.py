@@ -19,7 +19,7 @@ class Event(commands.Cog):
     
     @commands.Cog.listener()
     async def on_ready(self):
-        self.bot.add_view((VerificationView()))
+        self.bot.add_view(VerificationView())
         self.bot.add_view(VeriConfiView())
         self.bot.add_view(ClosedTicketToolView())
         printr("Views de event.py cargados correctamente.", 1)
@@ -31,7 +31,7 @@ class Event(commands.Cog):
         if message.author.bot: 
             printr(f"Mensaje es un BOT.", 2)
             return
-        
+
         # Guarda los datos del mensaje en una variable
         userID = str(message.author.id)
         guildID = str(message.guild.id)

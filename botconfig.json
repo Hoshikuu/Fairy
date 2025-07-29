@@ -1,24 +1,24 @@
 {
     "1013956259201945702": {
-        "setup": 0,
+        "setup": 1,
         "prefix": "hs$",
         "su": [
-            "Staff",
-            "Admin"
+            1396905755063353527,
+            1396905955530375291
         ],
         "ticket": {
             "general": 1013956260070174742,
-            "mensaje": "Bienvenido al servidor pasate por <#1342870557875638342> y disfruta del servidor.",
+            "mensaje": "Bienvenido al servidor.",
             "category": 1399398958677364860,
             "miembro": 1396905657260834916,
             "su": [
-                "Admin"
+                1396905955530375291
             ],
             "panels": {
-                "verification": {
-                    "count": 11,
-                    "title": "Verificaci\u00f3n",
-                    "description": "Pulsa el boton para crear un ticket de verificaci\u00f3n.",
+                "verificacion": {
+                    "count": 1,
+                    "title": "Verificacion",
+                    "description": "Verificar",
                     "category": 1399398958677364860,
                     "name": "verificacion"
                 }

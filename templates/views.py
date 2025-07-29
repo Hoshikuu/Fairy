@@ -1,6 +1,7 @@
 import discord
 
 from func.botconfig import configJson, ChargeConfig
+from templates.buttons import NextButton, PrevButton, PrefixButton, SaveButton, SuButton, TicketWelcButton, TicketButton, TicketSuButton
 
 from json import dump
 
@@ -50,7 +51,7 @@ class VeriConfiView(discord.ui.View):
     @discord.ui.button(label="Verificar", style=discord.ButtonStyle.success, custom_id="verification")
     async def Verification(self, interaction: discord.Interaction, button: discord.ui.Button):
         ticketConfig = configJson[str(interaction.guild_id)]["ticket"]
-        if not any((role.name in ticketConfig["su"] for role in interaction.user.roles) or (role.id in ticketConfig["su"] for role in interaction.user.roles)):
+        if not any(role.id in ticketConfig["su"] for role in interaction.user.roles):
             await interaction.response.send_message("Solo un miembro del staff puede usar ese botón.", ephemeral=True)
             return
         
@@ -78,7 +79,7 @@ class ClosedTicketToolView(discord.ui.View):
     @discord.ui.button(label="Abrir", style=discord.ButtonStyle.green, custom_id="reopentiket")
     async def ReOpenTicketButton(self, interaction: discord.Interaction, button: discord.ui.Button):
         privilegeRoles = configJson[str(interaction.guild_id)]["ticket"]["su"]
-        if not any((role.name in privilegeRoles for role in interaction.user.roles) or (role.id in privilegeRoles for role in interaction.user.roles)):
+        if not any(role.id in privilegeRoles for role in interaction.user.roles):
             await interaction.response.send_message("No tienes permisos para usar ese botón.", ephemeral=True)
             return
         
@@ -108,7 +109,7 @@ class ClosedTicketToolView(discord.ui.View):
     @discord.ui.button(label="Borrar", style=discord.ButtonStyle.danger, custom_id="deleteticket")
     async def DeleteTicketButton(self, interaction: discord.Interaction, button: discord.ui.Button):
         privilegeRoles = configJson[str(interaction.guild_id)]["ticket"]["su"]
-        if not any((role.name in privilegeRoles for role in interaction.user.roles) or (role.id in privilegeRoles for role in interaction.user.roles)):
+        if not any(role.id in privilegeRoles for role in interaction.user.roles):
             await interaction.response.send_message("No tienes permisos para usar ese botón.", ephemeral=True)
             return
         
@@ -117,7 +118,10 @@ class ClosedTicketToolView(discord.ui.View):
             description="Este ticket será borrado en 3 segundos.",
             color=discord.Color.red()
         )
-        await interaction.response.send_message(embed=embed)
+        if button.disabled == False:
+           await interaction.response.send_message(embed=embed)
+        button.disabled = True
+        await interaction.message.edit(view=self)
 
         await asyncio.sleep(3)
         await interaction.channel.delete(reason="Ticket cerrado por el staff.")
@@ -142,7 +146,7 @@ class VerificationView(discord.ui.View):
     @discord.ui.button(label="Cerrar", style=discord.ButtonStyle.danger, custom_id="closeticketverification")
     async def CloseButton(self, interaction: discord.Interaction, button: discord.ui.Button):
         privilegeRoles = configJson[str(interaction.guild_id)]["ticket"]["su"]
-        if not any((role.name in privilegeRoles for role in interaction.user.roles) or (role.id in privilegeRoles for role in interaction.user.roles)):
+        if not any(role.id in privilegeRoles for role in interaction.user.roles):
             await interaction.response.send_message("No tienes permisos para usar ese botón.", ephemeral=True)
             return
         
@@ -168,79 +172,105 @@ class VerificationView(discord.ui.View):
         await interaction.message.edit(view=self)
 
 class SetupView(discord.ui.View):
-    def __init__(self, author_id, original_embed: discord.Embed):
-        super().__init__(timeout=300)
-        self.author_id = author_id
-        self.prefix = None
-        self.su_roles = []
-        self.message: discord.Message = None  # se establecerá al enviarlo
-        self.embed = original_embed
+    def __init__(self, authorID, guildID):
+        super().__init__(timeout=1200)
+        self.authorID = authorID
+        self.guildID = str(guildID)
+        self.page = 0
 
+        config = configJson[str(guildID)]
+
+        # Datos introducidos
+        self.prefix = config["prefix"]
+        self.su = None if config["su"] == [] else str(config["su"])[1:-1]
+        self.Tgeneral = None if config["ticket"]["general"] == 0 else config["ticket"]["general"] 
+        self.Tmensaje = None if config["ticket"]["mensaje"] == "" else config["ticket"]["mensaje"]
+        self.Tcategory = None if config["ticket"]["category"] == 0 else config["ticket"]["category"] 
+        self.Tmiembro = None if config["ticket"]["miembro"] == 0 else config["ticket"]["miembro"] 
+        self.Tsu = None if config["ticket"]["su"] == [] else str(config["ticket"]["su"])[1:-1]
+
+        self.embed = discord.Embed(color=discord.Color.blurple())
+        self.message: discord.Message = None
+        self.UpdatePageContent()
+
+    # Funcion para saber si ejecutar los callbacks
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
-        return interaction.user.id == self.author_id
+        return interaction.user.id == self.authorID
 
-    async def update_embed(self):
-        # Actualizar el contenido del embed
-        self.embed.clear_fields()
-        self.embed.add_field(name="Prefix", value=self.prefix or "❌ No configurado", inline=False)
-        self.embed.add_field(
-            name="Roles SU",
-            value=", ".join(map(str, self.su_roles)) if self.su_roles else "❌ No configurado",
-            inline=False
-        )
-        # Editar el mensaje original
-        await self.message.edit(embed=self.embed, view=self)
+    def UpdatePageContent(self):
+        self.clear_items()
 
-    @discord.ui.button(label="Establecer prefix", style=discord.ButtonStyle.primary)
-    async def set_prefix(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await interaction.response.send_message("✏️ Escribe el prefix que quieres usar:", ephemeral=True)
+        match self.page:
+            case 0:
+                self.embed.title = "Configuración del Bot"
+                self.embed.description = (
+                    "Bienvenido al asistente de configuración del bot.\n"
+                    "Haz clic en \"Siguiente\" para comenzar."
+                )
+                self.add_item(NextButton(parentView=self))
 
-        def check(m):
-            return m.author.id == interaction.user.id and m.channel == interaction.channel
+            case 1:
+                self.embed.title = "Configurar Prefix"
+                self.embed.description = "Configura el prefix que usará el bot en este servidor."
+                self.embed.clear_fields()
+                self.embed.add_field(name="Prefix", value=self.prefix or "hs$", inline=False)
+                self.add_item(PrefixButton(parentView=self))
+                self.add_item(PrevButton(parentView=self))
+                self.add_item(NextButton(parentView=self))
+            
+            case 2:
+                self.embed.title = "Configurar Staff"
+                self.embed.description = "Configura los roles las cuales formaran parte del staff."
+                self.embed.clear_fields()
+                self.embed.add_field(name="Roles", value=self.su or "No configurado", inline=False)
+                self.add_item(SuButton(parentView=self))
+                self.add_item(PrevButton(parentView=self))
+                self.add_item(NextButton(parentView=self))
 
-        try:
-            msg = await interaction.client.wait_for("message", timeout=60, check=check)
-            self.prefix = msg.content.strip()
-            await msg.delete()
-            await interaction.followup.send(f"✅ Prefix establecido: `{self.prefix}`", ephemeral=True)
-            await self.update_embed()
-        except asyncio.TimeoutError:
-            await interaction.followup.send("⏱️ Tiempo agotado. Intenta de nuevo.", ephemeral=True)
+            case 3:
+                self.embed.title = "Configurar Tickets Bienvenida"
+                self.embed.description = "Configura el canal General y el mensaje de bienvenida que se va a enviar."
+                self.embed.clear_fields()
+                self.embed.add_field(name="General", value=self.Tgeneral or "No configurado", inline=True)
+                self.embed.add_field(name="Mensaje", value=self.Tmensaje or "No configurado", inline=False)
+                self.add_item(TicketWelcButton(parentView=self))
+                self.add_item(PrevButton(parentView=self))
+                self.add_item(NextButton(parentView=self))
 
-    @discord.ui.button(label="Establecer roles SU", style=discord.ButtonStyle.primary)
-    async def set_su(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await interaction.response.send_message("📥 Envía los IDs de los roles separados por comas (ej: `123,456`):", ephemeral=True)
+            case 4:
+                self.embed.title = "Configurar Tickets"
+                self.embed.description = "Configura el rol de Miembros y la categoria donde comprobara el contestador automatico."
+                self.embed.clear_fields()
+                self.embed.add_field(name="Miembro", value=self.Tmiembro or "No configurado", inline=True)
+                self.embed.add_field(name="Categoria", value=self.Tcategory or "No configurado", inline=False)
+                self.add_item(TicketButton(parentView=self))
+                self.add_item(PrevButton(parentView=self))
+                self.add_item(NextButton(parentView=self))
 
-        def check(m):
-            return m.author.id == interaction.user.id and m.channel == interaction.channel
+            case 5:
+                self.embed.title = "Configurar Staff Ticket"
+                self.embed.description = "Configura los roles las cuales formaran parte del staff en los tickets."
+                self.embed.clear_fields()
+                self.embed.add_field(name="Ticket Roles", value=self.Tsu or "No configurado", inline=False)
+                self.add_item(TicketSuButton(parentView=self))
+                self.add_item(PrevButton(parentView=self))
+                self.add_item(NextButton(parentView=self))
 
-        try:
-            msg = await interaction.client.wait_for("message", timeout=60, check=check)
-            self.su_roles = [int(r.strip()) for r in msg.content.split(",")]
-            await msg.delete()
-            await interaction.followup.send("✅ Roles SU actualizados correctamente.", ephemeral=True)
-            await self.update_embed()
-        except asyncio.TimeoutError:
-            await interaction.followup.send("⏱️ Tiempo agotado. Intenta de nuevo.", ephemeral=True)
-        except ValueError:
-            await interaction.followup.send("❌ Asegúrate de usar solo IDs numéricos separados por comas.", ephemeral=True)
+            case 6:
+                self.embed.title = "Confirmación"
+                self.embed.description = "Revisa los datos y confirma para guardar."
+                self.embed.clear_fields()
+                self.embed.add_field(name="Prefix", value=self.prefix or "No configurado", inline=True)
+                self.embed.add_field(name="Roles", value=self.su or "No configurado", inline=True)
+                self.embed.add_field(name="General", value=self.Tgeneral or "No configurado", inline=True)
+                self.embed.add_field(name="Mensaje", value=self.Tmensaje or "No configurado", inline=True)
+                self.embed.add_field(name="Miembro", value=self.Tmiembro or "No configurado", inline=True)
+                self.embed.add_field(name="Categoria", value=self.Tcategory or "No configurado", inline=True)
+                self.embed.add_field(name="Ticket Roles", value=self.Tsu or "No configurado", inline=False)
+                self.add_item(PrevButton(parentView=self))
+                self.add_item(SaveButton(parentView=self))
 
-    @discord.ui.button(label="Confirmar configuración", style=discord.ButtonStyle.success)
-    async def confirm(self, interaction: discord.Interaction, button: discord.ui.Button):
-        if not self.prefix or not self.su_roles:
-            await interaction.response.send_message("⚠️ Asegúrate de haber configurado el prefix y los roles antes de confirmar.", ephemeral=True)
-            return
-
-        guild_id = str(interaction.guild.id)
-        configJson[guild_id] = {
-            "setup": 1,
-            "prefix": self.prefix,
-            "su": self.su_roles
-        }
-
-        with open("botconfig.json", "w") as file:
-            dump(configJson, file, indent=4)
-
-        await interaction.response.send_message("✅ Configuración guardada correctamente.")
-        ChargeConfig()
-        self.stop()
+    async def UpdateEmbed(self):
+        self.UpdatePageContent()
+        if self.message:
+            await self.message.edit(embed=self.embed, view=self)

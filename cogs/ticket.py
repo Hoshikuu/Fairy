@@ -38,6 +38,7 @@ class Ticket(commands.Cog):
         panels = configJson[str(ctx.guild.id)]["ticket"]["panels"]
         if not id in panels:
             panels[id] = {
+                "count": 0,
                 "title": title,
                 "description": description,
                 "category": int(category),

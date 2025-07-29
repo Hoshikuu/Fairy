@@ -48,9 +48,6 @@ def IsSU():
         # Verificar por IDs de roles (recomendado)
         if any(role.id in suRoles for role in ctx.author.roles):
             return True
-        # (Opcional) Verificar por nombres de roles si los guardas como texto
-        if any(role.name in suRoles for role in ctx.author.roles):
-            return True
         raise commands.MissingAnyRole(suRoles)
     return commands.check(predicate)
 
@@ -72,7 +69,7 @@ def DefaultServerConfig(guild):
             "panels": {}
         }
     }
-    with open("botconfig.json", "w") as file:
+    with open("botconfig.json", "w", encoding="utf-8") as file:
         dump(configJson, file, indent=4)
 
     printr(f"Configuración por defecto creada para el servidor.", 1)

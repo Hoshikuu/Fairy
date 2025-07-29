@@ -6,7 +6,7 @@ from discord.ext import commands
 from json import dump
 
 # Modulo de funciones
-from func.botconfig import configJson, CheckSetUp, ChargeConfig, IsSU
+from func.botconfig import configJson, CheckSetUp, ChargeConfig, IsSU, DefaultServerConfig
 from func.terminal import printr
 
 from templates.views import SetupView
@@ -16,23 +16,19 @@ class Settings(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.hybrid_command(name="setup", description="Inicia la configuración del bot con botones.")
-    async def setup(self, ctx: commands.Context):
+    @commands.hybrid_command(name="setup", description="Inicia la configuración interactiva del bot.")
+    async def setup(self, ctx):
+        if str(ctx.guild.id) not in configJson:
+            printr(f"El servidor {ctx.guild.id} no tiene una configuración asignada.", 2)
+            DefaultServerConfig(ctx.guild.id)
+
         if not CheckSetUp(ctx):
-            await ctx.send("❌ Este servidor ya está configurado.")
+            await ctx.send("Este servidor ya está configurado.")
             return
 
-        embed = discord.Embed(
-            title="🛠 Configuración del Bot",
-            description="Usa los botones para configurar paso a paso.",
-            color=discord.Color.blurple()
-        )
-        embed.add_field(name="Prefix", value="❌ No configurado", inline=False)
-        embed.add_field(name="Roles SU", value="❌ No configurado", inline=False)
-
-        view = SetupView(author_id=ctx.author.id, original_embed=embed)
-        msg = await ctx.send(embed=embed, view=view, ephemeral=True)
-        view.message = msg  # Guardar referencia al mensaje original para editarlo después
+        view = SetupView(authorID=ctx.author.id, guildID=ctx.guild.id)
+        msg = await ctx.send(embed=view.embed, view=view, ephemeral=True)
+        view.message = msg
 
     # # Ejecutar el comando para poder usar otros comandos
     # # Pide de argumentos la configuracion basica
