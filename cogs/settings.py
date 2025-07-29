@@ -9,33 +9,53 @@ from json import dump
 from func.botconfig import configJson, CheckSetUp, ChargeConfig, IsSU
 from func.terminal import printr
 
+from templates.views import SetupView
+
 # Para comandos que esten relacionados a la configuracion del bot
 class Settings(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    # Ejecutar el comando para poder usar otros comandos
-    # Pide de argumentos la configuracion basica
-    @commands.bot.hybrid_command(name="setup", description="Hace la configuracion inicial del bot.")
-    async def setup(self, ctx: commands.Context, prefix: str, su: str):
-        # Prevenir la ejecucion del comando si esta configurado el bot.
+    @commands.hybrid_command(name="setup", description="Inicia la configuración del bot con botones.")
+    async def setup(self, ctx: commands.Context):
         if not CheckSetUp(ctx):
-            await ctx.send("Este servidor ya ha sido configurado.", reference=ctx.message)
+            await ctx.send("❌ Este servidor ya está configurado.")
             return
 
-        guildID = str(ctx.guild.id)
-        configJson[guildID]["setup"] = 1
-        configJson[guildID]["prefix"] = prefix
-        configJson[guildID]["su"] = su.split(",")
+        embed = discord.Embed(
+            title="🛠 Configuración del Bot",
+            description="Usa los botones para configurar paso a paso.",
+            color=discord.Color.blurple()
+        )
+        embed.add_field(name="Prefix", value="❌ No configurado", inline=False)
+        embed.add_field(name="Roles SU", value="❌ No configurado", inline=False)
 
-        # Guardar la nueva configuracion
-        with open("botconfig.json", "w") as file:
-            dump(configJson, file, indent=4)
+        view = SetupView(author_id=ctx.author.id, original_embed=embed)
+        msg = await ctx.send(embed=embed, view=view, ephemeral=True)
+        view.message = msg  # Guardar referencia al mensaje original para editarlo después
+
+    # # Ejecutar el comando para poder usar otros comandos
+    # # Pide de argumentos la configuracion basica
+    # @commands.bot.hybrid_command(name="setup", description="Hace la configuracion inicial del bot.")
+    # async def setup(self, ctx, prefix, su, ):
+    #     # Prevenir la ejecucion del comando si esta configurado el bot.
+    #     if not CheckSetUp(ctx):
+    #         await ctx.send("Este servidor ya ha sido configurado.", reference=ctx.message)
+    #         return
+
+    #     guildID = str(ctx.guild.id)
+    #     configJson[guildID]["setup"] = 1
+    #     configJson[guildID]["prefix"] = prefix
+    #     configJson[guildID]["su"] = su.split(",")
+
+    #     # Guardar la nueva configuracion
+    #     with open("botconfig.json", "w") as file:
+    #         dump(configJson, file, indent=4)
         
-        printr(f"Setup del bot completado en el servidor {guildID}.", 1)
-        ChargeConfig() # Recarga la configuracion del bot
+    #     printr(f"Setup del bot completado en el servidor {guildID}.", 1)
+    #     ChargeConfig() # Recarga la configuracion del bot
 
-        await ctx.send("Setup del bot completado.", reference=ctx.message)
+    #     await ctx.send("Setup del bot completado.", reference=ctx.message)
 
     # Funcion para cambiar el prefijo en la configuracion del bot
     # La funcion pide un argumento, el prefijo nuevo
@@ -48,7 +68,7 @@ class Settings(commands.Cog):
             return
         
         configJson[str(ctx.guild.id)]["prefix"] = prefix # El nuevo prefijo
-        with open("botconfig.json", "w") as file:
+        with open("botconfig.json", "w", encoding="utf-8") as file:
             dump(configJson, file, indent=4)
         
         printr(f"Prefijo del servidor {ctx.guild.id} cambiado a {prefix}.", 1)
@@ -67,7 +87,7 @@ class Settings(commands.Cog):
             return
         
         configJson[str(ctx.guild.id)]["su"] = su.split(",")
-        with open("botconfig.json", "w") as file:
+        with open("botconfig.json", "w", encoding="utf-8") as file:
             dump(configJson, file, indent=4)
         
         printr(f"Super usuario del servidor {ctx.guild.id} cambiado a {su}.", 1)

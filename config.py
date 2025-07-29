@@ -10,5 +10,5 @@ def GetToken():
     # Obtener el token del bot
     load_dotenv()
     token = getenv("DISCORD_TOKEN")
-    printr(f"Token establecido.", 1)
+    printr(f"Token del bot obtenido y establecido.", 1)
     return token

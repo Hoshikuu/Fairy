@@ -62,7 +62,15 @@ def DefaultServerConfig(guild):
     configJson[guild] = {
         "setup": 0,
         "prefix": "hs$",
-        "su": []
+        "su": [],
+        "ticket": {
+            "general": 0,
+            "mensaje": "Bienvenido al servidor.",
+            "category": 0,
+            "miembro": 0,
+            "su": [],
+            "panels": {}
+        }
     }
     with open("botconfig.json", "w") as file:
         dump(configJson, file, indent=4)

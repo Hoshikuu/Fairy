@@ -9,7 +9,7 @@ from func.terminal import printr
 from func.botconfig import configJson, DefaultServerConfig, GetPrefix
 from func.database import DatabaseConnect
 
-from templates.views import VerificationView
+from templates.views import VerificationView, VeriConfiView, ClosedTicketToolView
 
 # Comandos relacionados con eventos de discord
 class Event(commands.Cog):
@@ -20,7 +20,9 @@ class Event(commands.Cog):
     @commands.Cog.listener()
     async def on_ready(self):
         self.bot.add_view((VerificationView()))
-        print("[View persistente] PostCloseOptionsView cargada.")
+        self.bot.add_view(VeriConfiView())
+        self.bot.add_view(ClosedTicketToolView())
+        printr("Views de event.py cargados correctamente.", 1)
     
     # Registrar cada mensaje de cada usuario exeptuando bots y comandos
     @commands.Cog.listener()
@@ -95,7 +97,7 @@ class Event(commands.Cog):
     @commands.Cog.listener()
     async def on_guild_channel_create(self, channel):
         # Verificamos si el canal pertenece a la categoría de tickets
-        if channel.category_id == 1399398958677364860:
+        if channel.category_id == configJson[str(channel.guild.id)]["ticket"]["category"]:
             if str(channel.name).split("-")[0] == "verificacion":
                 embed = discord.Embed(
                     title="Verificación",
