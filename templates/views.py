@@ -1,7 +1,7 @@
 import discord
 
 from func.botconfig import configJson, ChargeConfig
-from templates.buttons import NextButton, PrevButton, PrefixButton, SaveButton, SuButton, TicketWelcButton, TicketButton, TicketSuButton
+from templates.buttons import *
 
 from json import dump
 
@@ -188,6 +188,7 @@ class SetupView(discord.ui.View):
         self.Tcategory = None if config["ticket"]["category"] == 0 else config["ticket"]["category"] 
         self.Tmiembro = None if config["ticket"]["miembro"] == 0 else config["ticket"]["miembro"] 
         self.Tsu = None if config["ticket"]["su"] == [] else str(config["ticket"]["su"])[1:-1]
+        self.log = None if config["log"] == [] else config["log"]
 
         self.embed = discord.Embed(color=discord.Color.blurple())
         self.message: discord.Message = None
@@ -214,8 +215,8 @@ class SetupView(discord.ui.View):
                 self.embed.description = "Configura el prefix que usará el bot en este servidor."
                 self.embed.clear_fields()
                 self.embed.add_field(name="Prefix", value=self.prefix or "hs$", inline=False)
-                self.add_item(PrefixButton(parentView=self))
                 self.add_item(PrevButton(parentView=self))
+                self.add_item(PrefixButton(parentView=self))
                 self.add_item(NextButton(parentView=self))
             
             case 2:
@@ -223,8 +224,8 @@ class SetupView(discord.ui.View):
                 self.embed.description = "Configura los roles las cuales formaran parte del staff."
                 self.embed.clear_fields()
                 self.embed.add_field(name="Roles", value=self.su or "No configurado", inline=False)
-                self.add_item(SuButton(parentView=self))
                 self.add_item(PrevButton(parentView=self))
+                self.add_item(SuButton(parentView=self))
                 self.add_item(NextButton(parentView=self))
 
             case 3:
@@ -233,8 +234,8 @@ class SetupView(discord.ui.View):
                 self.embed.clear_fields()
                 self.embed.add_field(name="General", value=self.Tgeneral or "No configurado", inline=True)
                 self.embed.add_field(name="Mensaje", value=self.Tmensaje or "No configurado", inline=False)
-                self.add_item(TicketWelcButton(parentView=self))
                 self.add_item(PrevButton(parentView=self))
+                self.add_item(TicketWelcButton(parentView=self))
                 self.add_item(NextButton(parentView=self))
 
             case 4:
@@ -243,8 +244,8 @@ class SetupView(discord.ui.View):
                 self.embed.clear_fields()
                 self.embed.add_field(name="Miembro", value=self.Tmiembro or "No configurado", inline=True)
                 self.embed.add_field(name="Categoria", value=self.Tcategory or "No configurado", inline=False)
-                self.add_item(TicketButton(parentView=self))
                 self.add_item(PrevButton(parentView=self))
+                self.add_item(TicketButton(parentView=self))
                 self.add_item(NextButton(parentView=self))
 
             case 5:
@@ -252,11 +253,20 @@ class SetupView(discord.ui.View):
                 self.embed.description = "Configura los roles las cuales formaran parte del staff en los tickets."
                 self.embed.clear_fields()
                 self.embed.add_field(name="Ticket Roles", value=self.Tsu or "No configurado", inline=False)
-                self.add_item(TicketSuButton(parentView=self))
                 self.add_item(PrevButton(parentView=self))
+                self.add_item(TicketSuButton(parentView=self))
                 self.add_item(NextButton(parentView=self))
-
+                
             case 6:
+                self.embed.title = "Configurar Canal Log"
+                self.embed.description = "Configura un canal donde el bot mandará los logs."
+                self.embed.clear_fields()
+                self.embed.add_field(name="Canal Log", value=self.log or "No configurado", inline=False)
+                self.add_item(PrevButton(parentView=self))
+                self.add_item(TicketSuButton(parentView=self))
+                self.add_item(NextButton(parentView=self))
+                
+            case 7:
                 self.embed.title = "Confirmación"
                 self.embed.description = "Revisa los datos y confirma para guardar."
                 self.embed.clear_fields()
@@ -266,7 +276,8 @@ class SetupView(discord.ui.View):
                 self.embed.add_field(name="Mensaje", value=self.Tmensaje or "No configurado", inline=True)
                 self.embed.add_field(name="Miembro", value=self.Tmiembro or "No configurado", inline=True)
                 self.embed.add_field(name="Categoria", value=self.Tcategory or "No configurado", inline=True)
-                self.embed.add_field(name="Ticket Roles", value=self.Tsu or "No configurado", inline=False)
+                self.embed.add_field(name="Ticket Roles", value=self.Tsu or "No configurado", inline=True)
+                self.embed.add_field(name="Canal Log", value=self.log or "No configurado", inline=False)
                 self.add_item(PrevButton(parentView=self))
                 self.add_item(SaveButton(parentView=self))
 

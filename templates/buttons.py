@@ -4,7 +4,8 @@ from json import dump
 
 from func.botconfig import ChargeConfig, configJson
 
-from templates.modals import PrefixModal, SuModal, TicketWelcModal, TicketModal, TicketSuModal
+from templates.modals import *
+from templates.embeds import SimpleEmbed
 
 class NextButton(discord.ui.Button):
     def __init__(self, parentView):
@@ -66,6 +67,14 @@ class TicketSuButton(discord.ui.Button):
     async def callback(self, interaction: discord.Interaction):
         await interaction.response.send_modal(TicketSuModal(self.parentView))
 
+class LogButton(discord.ui.Button):
+    def __init__(self, parentView):
+        super().__init__(label="Editar Log", style=discord.ButtonStyle.green)
+        self.parentView = parentView
+        
+    async def callback(self, interaction: discord.Interaction):
+        await interaction.response.send_modal(LogModal(self.parentView))
+
 class SaveButton(discord.ui.Button):
     def __init__(self, parentView):
         super().__init__(label="Guardar Configuración", style=discord.ButtonStyle.success)
@@ -90,5 +99,6 @@ class SaveButton(discord.ui.Button):
         with open("botconfig.json", "w", encoding="utf-8") as f:
             dump(configJson, f, indent=4)
         ChargeConfig()
-
-        await interaction.response.edit_message(content="Configuración guardada.")
+        
+        embed=SimpleEmbed("Configuración Guardada", "La configuración del Setup fue guardada correctamente, vuelve a ejecutar el comando si deseas cambiar algo.", discord.Color.green())
+        await interaction.response.edit_message(embed=embed, view=None)

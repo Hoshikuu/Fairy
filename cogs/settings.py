@@ -1,15 +1,13 @@
 # Modulos de discord
-import discord
+from discord import Color
 from discord.ext import commands
 
-# Modulo para el JSON
-from json import dump
-
 # Modulo de funciones
-from func.botconfig import configJson, CheckSetUp, ChargeConfig, IsSU, DefaultServerConfig
+from func.botconfig import configJson, IsSU, DefaultServerConfig
 from func.terminal import printr
 
 from templates.views import SetupView
+from templates.embeds import SimpleEmbed
 
 # Para comandos que esten relacionados a la configuracion del bot
 class Settings(commands.Cog):
@@ -17,91 +15,23 @@ class Settings(commands.Cog):
         self.bot = bot
 
     @commands.hybrid_command(name="setup", description="Inicia la configuración interactiva del bot.")
+    @IsSU()
     async def setup(self, ctx):
         if str(ctx.guild.id) not in configJson:
-            printr(f"El servidor {ctx.guild.id} no tiene una configuración asignada.", 2)
+            printr(f"El servidor {ctx.guild.id} no tiene un json de configuración.", 2)
             DefaultServerConfig(ctx.guild.id)
 
-        if not CheckSetUp(ctx):
-            await ctx.send("Este servidor ya está configurado.")
-            return
-
         view = SetupView(authorID=ctx.author.id, guildID=ctx.guild.id)
-        msg = await ctx.send(embed=view.embed, view=view, ephemeral=True)
+        msg = await ctx.send(embed=view.embed, view=view, ephemeral=False)
         view.message = msg
-
-    # # Ejecutar el comando para poder usar otros comandos
-    # # Pide de argumentos la configuracion basica
-    # @commands.bot.hybrid_command(name="setup", description="Hace la configuracion inicial del bot.")
-    # async def setup(self, ctx, prefix, su, ):
-    #     # Prevenir la ejecucion del comando si esta configurado el bot.
-    #     if not CheckSetUp(ctx):
-    #         await ctx.send("Este servidor ya ha sido configurado.", reference=ctx.message)
-    #         return
-
-    #     guildID = str(ctx.guild.id)
-    #     configJson[guildID]["setup"] = 1
-    #     configJson[guildID]["prefix"] = prefix
-    #     configJson[guildID]["su"] = su.split(",")
-
-    #     # Guardar la nueva configuracion
-    #     with open("botconfig.json", "w") as file:
-    #         dump(configJson, file, indent=4)
         
-    #     printr(f"Setup del bot completado en el servidor {guildID}.", 1)
-    #     ChargeConfig() # Recarga la configuracion del bot
-
-    #     await ctx.send("Setup del bot completado.", reference=ctx.message)
-
-    # Funcion para cambiar el prefijo en la configuracion del bot
-    # La funcion pide un argumento, el prefijo nuevo
-    @commands.hybrid_command(name="setprefix", description="Establece el prefijo del bot.")
-    @IsSU() # Funcion para comprobar si el usuario tiene el de super usuario
-    async def setprefix(self, ctx, prefix):
-        # Prevenir la ejecucion de comandos si no esta configurado el bot.
-        if CheckSetUp(ctx):
-            await ctx.send("Porfavor use el comando /setup o hs$setup, antes de ejecutar ningun comando.", reference=ctx.message)
-            return
-        
-        configJson[str(ctx.guild.id)]["prefix"] = prefix # El nuevo prefijo
-        with open("botconfig.json", "w", encoding="utf-8") as file:
-            dump(configJson, file, indent=4)
-        
-        printr(f"Prefijo del servidor {ctx.guild.id} cambiado a {prefix}.", 1)
-        ChargeConfig() # Recarga la configuracion del bot
-        
-        await ctx.send(f"Prefijo cambiado a: `{prefix}`", reference=ctx.message)
-
-    # Funcion para cambiar el prefijo en la configuracion del bot
-    # La funcion pide un argumento, el prefijo nuevo
-    @commands.hybrid_command(name="setsu", description="Establece el super usuario del bot.")
-    @IsSU() # Funcion para comprobar si el usuario tiene el de super usuario
-    async def setsu(self, ctx, su):
-        # Prevenir la ejecucion de comandos si no esta configurado el bot.
-        if CheckSetUp(ctx):
-            await ctx.send("Porfavor use el comando /setup o hs$setup, antes de ejecutar ningun comando.", reference=ctx.message)
-            return
-        
-        configJson[str(ctx.guild.id)]["su"] = su.split(",")
-        with open("botconfig.json", "w", encoding="utf-8") as file:
-            dump(configJson, file, indent=4)
-        
-        printr(f"Super usuario del servidor {ctx.guild.id} cambiado a {su}.", 1)
-        ChargeConfig() # Recarga la configuracion del bot
-        
-        await ctx.send(f"Super usuario cambiado a: `{su}`", reference=ctx.message)
-
-    @setprefix.error
-    @setsu.error
+    # Esto indica si la funcion da error ejecutar esto
+    @setup.error
     # Error de permisos, Falta de permisos
     async def permission_error(self, ctx, error):
         if isinstance(error, commands.MissingAnyRole): # Comprobar que falta un rol
-            embed = discord.Embed(
-                title="Permiso Denegado",
-                description="No tienes permisos para ejecutar este comando.",
-                color=discord.Color.red()  # HEX: discord.Color.from_rgb(0,0,0)
-            )
-            printr(f"Error de permiso, {ctx.author} no tiene los permisos requeridos para ejecutar este comando.", 4)
+            printr(f"Error de permiso, {ctx.author} no tiene los permisos requeridos para ejecutar este comando.", 3)
+            embed = SimpleEmbed("Permiso Denegado", "No tienes permisos para ejecutar este comando.", Color.red())
             await ctx.send(embed=embed, reference=ctx.message)
 
 # Autorun

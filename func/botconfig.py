@@ -44,6 +44,8 @@ def GetPrefix(bot, message):
 def IsSU():
     async def predicate(ctx):
         guildID = str(ctx.guild.id)
+        if configJson[guildID]["setup"] == 0:
+            return True
         suRoles = configJson[guildID]["su"]
         # Verificar por IDs de roles (recomendado)
         if any(role.id in suRoles for role in ctx.author.roles):
@@ -60,6 +62,7 @@ def DefaultServerConfig(guild):
         "setup": 0,
         "prefix": "hs$",
         "su": [],
+        "log": 0,
         "ticket": {
             "general": 0,
             "mensaje": "Bienvenido al servidor.",

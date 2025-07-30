@@ -9,7 +9,7 @@ from asyncio import run
 # Modulo de funciones
 from config import GetToken
 from func.terminal import printr
-from func.botconfig import GetPrefix, ChargeConfig
+from func.botconfig import GetPrefix, ChargeConfig, configJson
 
 # TODO: Añadir embeds a los mensajes enviados de vuelta
 

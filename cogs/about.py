@@ -1,48 +1,31 @@
 # Modulos de discord
-import discord
+from discord import Color
 from discord.ext import commands
 
-# Modulos de funciones
-from func.botconfig import CheckSetUp
+# Modulos del bot
 from func.version import __tag__, __commit__, __branch__
+from templates.embeds import SimpleEmbed
 
-# Comandos que muestran cosas sobre el bot
+# About Commands
 class About(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    # Informacion basica del bot
-    #* Esto hay que tenerlo en cuenta, Este comando Hybrido funciona si usaras comandos de prefijo pero tambien te los añade en el command tree asi que son utiles para no repetir mucho codigo
+    # Información básica del bot
     @commands.hybrid_command(name="info", description="Muestra la información básica del bot")
-    async def info(self, ctx: commands.Context):
-        embed = discord.Embed(
-            title="HoyoStars",
-            description="Un bot privado para el servidor HoyoStars.",
-            color=discord.Color.blue()
-        )
-
-        # Para obtener el usuario correctamente en ambos casos
-        user = ctx.author if ctx.author else ctx.user
-        embed.set_author(name=user.name, icon_url=user.avatar.url)
-
+    async def info(self, ctx):
+        embed = SimpleEmbed("HoyoStars", "Un bot privado para el servidor HoyoStars.", Color.dark_blue())
         embed.add_field(name="Ping", value=f"{round(ctx.bot.latency * 1000)}ms", inline=False)
-        embed.add_field(name="Creador", value="yhoshiku", inline=True)
-        embed.set_footer(text="Gracias por usarme ❤️")
-
+        embed.add_field(name="Creador", value="<@853193606529024041>", inline=True)
+        embed.set_footer(text="Subanme el sueldo.")
         await ctx.send(embed=embed)
 
-    @commands.hybrid_command(name="version", description="Muestra la información básica del bot")
-    async def version(self, ctx: commands.Context):
-        embed = discord.Embed(
-            title="HoyoStars",
-            description=f"Actualmente estoy en la version {__tag__}",
-            color=discord.Color.green()
-        )
-
-        embed.add_field(name="Branch", value=__branch__, inline=False)
-        embed.add_field(name="Commit", value=__commit__, inline=True)
-        embed.set_footer(text="A futuro mas y mejor.")
-
+    # Muestra la versión actual del bot
+    @commands.hybrid_command(name="version", description="Muestra la versión actual del bot")
+    async def version(self, ctx):
+        embed = SimpleEmbed("HoyoStars", f"Actualmente estoy en la versión {__tag__} !", Color.magenta())
+        embed.add_field(name="GitHub", value="https://github.com/Hoshikuu/HoyoStars", inline=True)
+        embed.set_footer(text="A futuro más y mejor.")
         await ctx.send(embed=embed)
 
 # Autorun

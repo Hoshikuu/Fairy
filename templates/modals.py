@@ -99,3 +99,20 @@ class TicketSuModal(discord.ui.Modal, title="Configurar Staff para Ticket"):
         self.view.Tsu = self.TsuInput.value.strip()
         await self.view.UpdateEmbed()
         await interaction.response.edit_message(embed=self.view.embed, view=self.view)
+        
+class LogModal(discord.ui.Modal, title="Configurar Canal para Log"):
+    def __init__(self, view):
+        super().__init__()
+        self.view = view
+        self.logInput = discord.ui.TextInput(
+            label="Canal",
+            placeholder="ID Canal",
+            default=self.view.log or "",
+            required=True
+        )
+        self.add_item(self.logInput)
+
+    async def on_submit(self, interaction: discord.Interaction):
+        self.view.log = self.logInput.value.strip()
+        await self.view.UpdateEmbed()
+        await interaction.response.edit_message(embed=self.view.embed, view=self.view)

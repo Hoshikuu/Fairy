@@ -6,19 +6,20 @@
             1396905755063353527,
             1396905955530375291
         ],
+        "log": 1399904380257566870,
         "ticket": {
             "general": 1013956260070174742,
-            "mensaje": "Bienvenido al servidor.",
+            "mensaje": "Bienvenido al servidor. awfrawgawgaw",
             "category": 1399398958677364860,
             "miembro": 1396905657260834916,
             "su": [
                 1396905955530375291
             ],
             "panels": {
-                "verificacion": {
+                "patata": {
                     "count": 1,
                     "title": "Verificacion",
-                    "description": "Verificar",
+                    "description": "Verificacion",
                     "category": 1399398958677364860,
                     "name": "verificacion"
                 }
