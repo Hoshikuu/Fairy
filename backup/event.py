@@ -57,7 +57,7 @@ class Event(commands.Cog):
             newCount = data[0] + 1
             cursor.execute("UPDATE data SET messages = ? WHERE id = ?", (newCount, userID))
         else: # Añadir un nuevo registro si el usuario no existe
-            cursor.execute("INSERT INTO data (id, username, date, messages, voicechat) VAUES (?, ?, ?, ?, ?)", (userID, username, message.author.joined_at.strftime("%d/%m/%Y"), 1, 0))
+            cursor.execute("INSERT INTO data (id, username, date, messages, voicechat) VALUES (?, ?, ?, ?, ?)", (userID, username, message.author.joined_at.strftime("%d/%m/%Y"), 1, 0))
 
         conn.commit()
         
@@ -85,7 +85,7 @@ class Event(commands.Cog):
                 if data: # Actualizar el contador de mensajes 
                     cursor.execute("UPDATE data SET voicechat = ? WHERE id = ?", (sessionHours, userID))
                 else: # Añadir un nuevo registro si el usuario no existe
-                    cursor.execute("INSERT INTO data (id, username, date, messages, voicechat) VALUES (?, ?, ?, ?, ?)", (userID, member.display_name, member.joined_at.strftime("%d/%m/%Y"), 1, 0))
+                    cursor.execute("INSERT INTO data (id, username, date, messages, voicechat) VALUES (?, ?, ?, ?, ?)", (userID, member.display_name, member.joined_at.strftime("%d/%m/%Y"), 0, sessionHours))
 
                 conn.commit()
 

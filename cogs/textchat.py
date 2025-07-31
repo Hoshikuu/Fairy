@@ -25,7 +25,7 @@ class Textchat(commands.Cog):
         conn = DatabaseConnect(ctx.guild.id)
         cursor = conn.cursor()
 
-        cursor.execute("SELECT username, messages FROM data ORDER BY messages DESC")
+        cursor.execute("SELECT username, messages, voicechat FROM data ORDER BY messages DESC")
         datos = cursor.fetchall() # Obtiene los datos de cantidad de mensajes de todos los usuarios
         
         # UFFFF EMBEDS QUE BONITOS POR DIOS
@@ -38,8 +38,8 @@ class Textchat(commands.Cog):
         # Muestra el usuario y la cantidad de mensajes enviado en una pantalla de descripcion
         # TODO: Pa futuro separarlos en varias paginas para mejor legibilidad
         text = ""
-        for i, (username, cantidad) in enumerate(datos, start=1):
-            text += f"**{i}** {username} — **{cantidad} mensajes**\n"
+        for i, (username, cantidad, voicechat) in enumerate(datos, start=1):
+            text += f"**{i}** {username} — **{cantidad} mensajes** — **{voicechat}** horas\n"
         embed.description = text
         printr(f"Mostrando datos del contador en el Discord.", 1)
         await ctx.send(embed=embed, reference=ctx.message)

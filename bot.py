@@ -1,69 +1,68 @@
 # Modulos de discord para manejar el Bot
-import discord
+from discord import Intents
 from discord.ext import commands
 
 # Modulos Extras
-from os import listdir
+from os import listdir, getenv
 from asyncio import run
+from dotenv import load_dotenv
 
 # Modulo de funciones
-from config import GetToken
-from func.terminal import printr
 from func.botconfig import GetPrefix, ChargeConfig, configJson
+from func.logger import get_logger
 
 # TODO: Añadir embeds a los mensajes enviados de vuelta
 
-# TODO: Añadir el Rich a la terminal para un mejor output
-# --------------------
-# 1 -> INFO -> Information
-# 2 -> WARN -> Warning
-# 3 -> ERRO -> Error
-# 4 -> EXEP -> Exeption
-# --------------------
+# Logger centralizado
+logger = get_logger(__name__)
 
-#* Se carga antes de inicializar el bot, para evitar problemas con la variable de configuracion en otro script
+# Carga la configuracion inicial
 ChargeConfig()
-printr(f"Fichero de configuración cargado.", 1)
+logger.info("Configuración inical cargada")
 
 # El bot obtiene todos los permisos disponibles
-# TODO: Investigar para asignar solo los permisos necesarios
-intents = discord.Intents.all()
-bot = commands.Bot(command_prefix=GetPrefix, intents=intents)
-printr(f"Permisos del Bot establecidos.", 1)
+bot = commands.Bot(command_prefix=GetPrefix, intents=Intents.all())
+logger.debug("Permisos del bot establecidos.")
 
-# Mensaje que se muestra cuando el bot esta iniciado
-# Muestra los comandos sincronizados en el command tree del discord
-# Muestra en los servidores que esta sirviendo el bot
-@bot.event
-async def on_ready():
-    try:
-        synced = await bot.tree.sync()
-        printr(f"Sincronizados {len(synced)} comandos.", 1)
-    except Exception as e:
-        printr(f"Error al sincronizar comandos: {e}.", 3)
-        
-    printr(f"Bot conectado como {bot.user}.", 1)
-    
-    for guild in bot.guilds:
-        printr(f"Conectado al servidor: {guild.name} con id: {guild.id}.", 1)
-
-    printr(f"BOT listo para usarse.", 1)
+# Obtener el token del bot
+def GetToken():
+    load_dotenv()
+    token = getenv("DISCORD_TOKEN")
+    logger.info("Token del bot obtenido")
+    return token
 
 # Carga los cogs del bot automaticamente
 async def ChargeCogs():
     for cog in listdir("./cogs"):
-        if cog.endswith(".py"): # Busca los archivos de python y los carga al bot
-            printr(f"Cargando el archivo {cog} al bot.", 1)
+        if not cog.endswith(".py"): # Busca los archivos de python y los carga al bot
+            continue
+        try:
             await bot.load_extension(f"cogs.{cog[:-3]}")
+            logger.info(f"{cog} cargado a los cogs")
+        except Exception as e:
+            logger.critical(f"{cog} cog no se pudo cargar, es posible que algunos comandos y funcionalidades dejen de funcionar: {e}")
 
 # Funcion principal para ejecutar el bot
 async def main():
     async with bot:
         await ChargeCogs()
-        printr(f"Cogs cargados correctamente al bot.", 1)
+        logger.info("Todos los cogs cargados correctamente")
         await bot.start(GetToken())
+
+@bot.event
+async def on_ready():
+    try:
+        synced = await bot.tree.sync()
+        logger.info(f"Sincronizados {len(synced)} comandos")
+    except Exception as e:
+        logger.error(f"Error al sincronizar comandos: {e}")
+    
+    for guild in bot.guilds:
+        logger.debug(f"Conectado al servidor: {guild.name} con id: {guild.id}")
+
+    logger.info(" === BOT CONECTADO ===")
 
 # Inicia el bot
 if __name__ == "__main__":
-    printr(f"Iniciando Bot HoyoStars.", 1)
+    logger.info("Iniciando Bot HoyoStars")
     run(main())
