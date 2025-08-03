@@ -30,10 +30,11 @@ class PanelView(discord.ui.View):
             guild.default_role: discord.PermissionOverwrite(read_messages=False),
             interaction.user: discord.PermissionOverwrite(read_messages=True, send_messages=True)
         }
-        for roleID in configJson[str(guild)]["ticket"]["su"]: # Añadir los roles con permisos
+        for roleID in configJson[str(guild.id)]["ticket"]["su"]: # Añadir los roles con permisos
             role = interaction.guild.get_role(roleID)
             if role:
                 overwrites[role] = discord.PermissionOverwrite(view_channel=True, send_messages=True)
+                    
         channel = await guild.create_text_channel(
             name=f'{panel["name"]}-{panel["count"]:03d}',
             category=category,
