@@ -50,9 +50,9 @@ def GetPrefix(bot, message):
 def IsSU():
     async def predicate(ctx):
         guildID = str(ctx.guild.id)
-        if configJson[guildID]["setup"] == 0:
-            raise commands.CommandError()
         suRoles = configJson[guildID]["su"]
+        if configJson[guildID]["setup"] == 0:
+            raise commands.MissingAnyRole(suRoles)
         if any(role.id in suRoles for role in ctx.author.roles):
             return True
         raise commands.MissingAnyRole(suRoles)

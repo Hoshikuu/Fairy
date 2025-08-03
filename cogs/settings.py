@@ -14,9 +14,8 @@ logger = get_logger(__name__)
 class Settings(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-
+        
     @commands.hybrid_command(name="setup", description="Inicia la configuración interactiva del bot.")
-    @IsSU()
     async def setup(self, ctx):
         if str(ctx.guild.id) not in configJson:
             logger.warning(f"El servidor {ctx.guild.id} no tiene un json de configuración")
