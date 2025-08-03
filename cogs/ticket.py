@@ -1,27 +1,34 @@
 # Modulo de discord
-import discord
+from discord import Color
 from discord.ext import commands
 
 from templates.views import PanelView
+from templates.embeds import SimpleEmbed
 
 from json import dump
 
-from func.terminal import printr
 from func.botconfig import configJson, ChargeConfig, CheckSetUp
+from func.logger import get_logger
 
-# Template for cog
+logger = get_logger(__name__)
+
+# Comandos para manejar tickets
 class Ticket(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
     
     @commands.Cog.listener()
     async def on_ready(self):
-        for guild in self.bot.guilds:
-            panels = configJson[str(guild.id)]["ticket"]["panels"]
-            for panel_id, panel_data in panels.items():
-                view = PanelView(panel_id, panel_data)
-                self.bot.add_view(view)
-        printr(f"Views de ticket.py cargados correctamente.", 1)
+        # Carga las views de los mensajes ya enviados
+        try:
+            for guild in self.bot.guilds:
+                panels = configJson[str(guild.id)]["ticket"]["panels"]
+                for panelID, panelData in panels.items():
+                    view = PanelView(panelID, panelData)
+                    self.bot.add_view(view)
+            logger.info("Views de ticket.py cargados correctamente")
+        except Exception as e:
+            logger.error(f"Error inesperado al cargar views: {e}")
     
     @commands.hybrid_command(name="createticket", description="Crear un panel para tickets.")
     async def createticket(self, ctx, id, title, description, category, name):
@@ -30,26 +37,28 @@ class Ticket(commands.Cog):
             await ctx.send("Porfavor use el comando /setup o hs$setup, antes de ejecutar ningun comando.", reference=ctx.message)
             return
 
-        embed = discord.Embed(
-            title=title,
-            description=description,
-            color=discord.Color.green()
-        )
-        panels = configJson[str(ctx.guild.id)]["ticket"]["panels"]
-        if not id in panels:
-            panels[id] = {
-                "count": 0,
-                "title": title,
-                "description": description,
-                "category": int(category),
-                "name": name
-            }
-            configJson[str(ctx.guild.id)]["ticket"]["panels"] = panels
-            with open("botconfig.json", "w", encoding="utf-8") as file:
-                dump(configJson, file, indent=4)
-            ChargeConfig()
-       
-        await ctx.send(embed=embed, view=PanelView(id, panels[id]))
+        try :
+            message = await ctx.send(embed=SimpleEmbed("Ticket", "Creando panel de ticket", Color.red()))
+            panels = configJson[str(ctx.guild.id)]["ticket"]["panels"]
+            if not id in panels:
+                panels[id] = {
+                    "count": 0,
+                    "title": title,
+                    "description": description,
+                    "category": int(category),
+                    "name": name
+                }
+                configJson[str(ctx.guild.id)]["ticket"]["panels"] = panels
+                with open("botconfig.json", "w", encoding="utf-8") as file:
+                    logger.debug("Escribiendo nueva configuracion")
+                    dump(configJson, file, indent=4)
+                logger.warning("Recargando el fichero de configuracion")
+                ChargeConfig()
+        
+            embed = SimpleEmbed(title, description, Color.dark_blue())
+            await message.edit(embed=embed, view=PanelView(id, panels[id]))
+        except Exception as e:
+            logger.error(f"Error inesperado en crear el ticket {id}: {e}")
 
 # Autorun
 async def setup(bot):

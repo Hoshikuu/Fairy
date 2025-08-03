@@ -5,38 +5,44 @@ from json import load, dump
 from os.path import isfile
 
 # Modulo de funciones
-from func.terminal import printr
+from func.logger import get_logger
 
 # Variable que se usa globalmente para poder acceder al contenido del archivo de configuracion del bot
 configJson = None
+logger = get_logger(__name__)
+
+# Crea el fichero si no existe
+def CheckFile():
+    if isfile("botconfig.json"):
+        return
+    
+    logger.warning("Fichero de configuración no esta creado")
+    with open("botconfig.json", "w", encoding="utf-8") as file:
+        logger.debug("Creando fichero de configuracion")
+        file.write("{}")
+        logger.info("Fichero de configuración creado")
 
 # TODO: Que se pueda cambiar dinamicamente el nombre del archivo de configuracion
 # Carga el archivo de configuracion en la variable global, Se puede llamar en ejecucion para recargar el archivo de configuracion
 def ChargeConfig():
-    # Crea el fichero si no existe
-    if not isfile("botconfig.json"):
-        printr(f"Fichero de configuración no esta creado.", 4)
-        with open("botconfig.json", "w", encoding="utf-8") as file:
-            file.write("{}") # Para que lo pille como json vacio
-            printr(f"Fichero de configuración creado.", 1)
-        
+    CheckFile()
     global configJson # Para poder modificar la variable
 
     # Lee el contenido del json y lo carga a la variable
     with open("botconfig.json", "r", encoding="utf-8") as file:
         configJson = load(file)
-        printr(f"Cargando fichero de configuración", 1)
+        logger.info("Fichero de configuracion cargado")
 
 # Comprobar que se haya ejecutado el comando setup en el servidor
 def CheckSetUp(ctx):
-    # Principalmente la razon de esto, es para prevenir el uso de comandos cuando el bot aun no esta configurado
-    # Las funciones de contar mensajes y demas que no requieran ejecutar ningun comando seguiran funcionando
+    logger.debug("Comprobando estado de setup")
     if not bool(configJson[str(ctx.guild.id)]["setup"]):
         return True
 
 # Obtener el prefijo del servidor en la cual se esta enviando el mensaje a travez de la variable global
 def GetPrefix(bot, message):
     guildID = str(message.guild.id)
+    logger.debug(f"Recopilando prefix del servidor {guildID}")
     prefix = configJson[guildID]["prefix"]
     return prefix
 
@@ -45,9 +51,8 @@ def IsSU():
     async def predicate(ctx):
         guildID = str(ctx.guild.id)
         if configJson[guildID]["setup"] == 0:
-            return True
+            raise commands.CommandError()
         suRoles = configJson[guildID]["su"]
-        # Verificar por IDs de roles (recomendado)
         if any(role.id in suRoles for role in ctx.author.roles):
             return True
         raise commands.MissingAnyRole(suRoles)
@@ -75,5 +80,5 @@ def DefaultServerConfig(guild):
     with open("botconfig.json", "w", encoding="utf-8") as file:
         dump(configJson, file, indent=4)
 
-    printr(f"Configuración por defecto creada para el servidor.", 1)
+    logger.info("Configuracion por defecto creada para el servidor")
     ChargeConfig() # Recarga la configuración

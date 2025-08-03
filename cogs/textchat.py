@@ -1,11 +1,14 @@
 # Modulo de discord
-import discord
+from discord import Color
 from discord.ext import commands
 
 # Modulo de funciones
 from func.botconfig import CheckSetUp, IsSU
-from func.terminal import printr
 from func.database import DatabaseConnect
+from func.logger import get_logger
+from templates.embeds import SimpleEmbed
+
+logger = get_logger(__name__)
 
 # Comandos relacionados a mensajes de texto
 class Textchat(commands.Cog):
@@ -29,11 +32,7 @@ class Textchat(commands.Cog):
         datos = cursor.fetchall() # Obtiene los datos de cantidad de mensajes de todos los usuarios
         
         # UFFFF EMBEDS QUE BONITOS POR DIOS
-        embed = discord.Embed(
-            title="Contador Mensajes",
-            description="",
-            color=discord.Color.blue()  # HEX: discord.Color.from_rgb(0,0,0)
-        )
+        embed = SimpleEmbed("Contador Mensajes", "", Color.blue())
 
         # Muestra el usuario y la cantidad de mensajes enviado en una pantalla de descripcion
         # TODO: Pa futuro separarlos en varias paginas para mejor legibilidad
@@ -41,7 +40,7 @@ class Textchat(commands.Cog):
         for i, (username, cantidad, voicechat) in enumerate(datos, start=1):
             text += f"**{i}** {username} — **{cantidad} mensajes** — **{voicechat}** horas\n"
         embed.description = text
-        printr(f"Mostrando datos del contador en el Discord.", 1)
+        logger.info("Mostrando informacion del contador")
         await ctx.send(embed=embed, reference=ctx.message)
 
     # Esto indica si la funcion da error ejecutar esto
@@ -49,12 +48,8 @@ class Textchat(commands.Cog):
     # Error de permisos, Falta de permisos
     async def permission_error(self, ctx, error):
         if isinstance(error, commands.MissingAnyRole): # Comprobar que falta un rol
-            embed = discord.Embed(
-                title="Permiso Denegado",
-                description="No tienes permisos para ejecutar este comando.",
-                color=discord.Color.red()  # HEX: discord.Color.from_rgb(0,0,0)
-            )
-            printr(f"Error de permiso, {ctx.author} no tiene los permisos requeridos para ejecutar este comando.", 4)
+            embed = SimpleEmbed("Permiso Denegado", "No tienes permisos para ejecutar este comando", Color.red())
+            logger.error(f"Error de permiso, {ctx.author} no tiene los permisos requeridos para ejecutar este comando.")
             await ctx.send(embed=embed, reference=ctx.message)
 
 # Autorun

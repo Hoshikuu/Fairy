@@ -31,7 +31,7 @@ class About(commands.Cog):
         embed = SimpleEmbed("HoyoStars", f"Actualmente estoy en la versión {__tag__} !", Color.magenta())
         embed.add_field(name="GitHub", value="https://github.com/Hoshikuu/HoyoStars", inline=True)
         embed.set_footer(text="A futuro más y mejor.")
-        await ctx.send(embed=embed)
+        await ctx.send(embed=embed)  
 
 # Autorun
 async def setup(bot):

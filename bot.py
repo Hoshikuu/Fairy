@@ -61,6 +61,7 @@ async def on_ready():
         logger.debug(f"Conectado al servidor: {guild.name} con id: {guild.id}")
 
     logger.info(" === BOT CONECTADO ===")
+    print(" === BOT CONECTADO ===")
 
 # Inicia el bot
 if __name__ == "__main__":

@@ -6,11 +6,13 @@ from discord.ext import commands
 from time import time
 
 # Modulo de bot
-from func.terminal import printr
 from func.botconfig import configJson, DefaultServerConfig, GetPrefix
 from func.database import DatabaseConnect
 from templates.views import VerificationView, VeriConfiView, ClosedTicketToolView
 from templates.embeds import SimpleEmbed
+from func.logger import get_logger
+
+logger = get_logger(__name__)
 
 # Comandos relacionados con eventos de discord
 class Event(commands.Cog):
@@ -24,7 +26,7 @@ class Event(commands.Cog):
         self.bot.add_view(VerificationView())
         self.bot.add_view(VeriConfiView())
         self.bot.add_view(ClosedTicketToolView())
-        printr("Views de event.py cargados correctamente.", 1)
+        logger.info("Views de event.py cargados correctamente")
     
     @commands.Cog.listener()
     async def on_message(self, message):
@@ -35,7 +37,7 @@ class Event(commands.Cog):
 
         # Crear la configuracion del servidor si no tiene
         if guildID not in configJson:
-            printr(f"El servidor {message.guild.name} no tiene un json de configuración.", 2)
+            logger.warning(f"El servidor {message.guild.name} no tiene un json de configuración.")
             DefaultServerConfig(guildID)
         
         # Saltar si es un bot
@@ -65,29 +67,38 @@ class Event(commands.Cog):
 
     @commands.Cog.listener()
     async def on_voice_state_update(self, member, before, after):
-        userID = member.id
-        guildID = member.guild.id
-
+        userID = str(member.id)
+        guildID = str(member.guild.id)
         if before.channel is None and after.channel is not None:
+            logger.debug(f"Usuario {userID} entro a un canal de voz")
             self.voiceSessions[userID] = time()
+            
         elif before.channel is not None and after.channel is None:
-            if userID in self.voiceSessions:
-                startTime = self.voiceSessions.pop(userID)
-                sessionHours = float(time() - startTime) / 360
+            try:
+                if userID in self.voiceSessions:
+                    logger.debug(f"Usuario {userID} salio de un chat de voz")
+                    startTime = self.voiceSessions.pop(userID)
+                    sessionHours = float(time() - startTime) / 3600
 
-                conn = DatabaseConnect(guildID)
-                cursor = conn.cursor()
+                    conn = DatabaseConnect(guildID)
+                    cursor = conn.cursor()
+                    try:
+                        # Seleccionar los datos si no existe devuelve vacio
+                        cursor.execute(f"SELECT voicechat FROM data WHERE id = ?", (userID, ))
+                        data = cursor.fetchone()
+                    except Exception as e:
+                        logger.error(f"Error al obtener los datos: {e}")
+                    
+                    if data: # Actualizar el contador de mensajes 
+                        logger.debug(f"Actualizando el tiempo de chat de voz del usuario en {sessionHours}")
+                        cursor.execute("UPDATE data SET voicechat = ? WHERE id = ?", (data[0] + sessionHours, userID))
+                    else: # Añadir un nuevo registro si el usuario no existe
+                        logger.debug("Creando un nuevo registro para el usuario")
+                        cursor.execute("INSERT INTO data (id, username, date, messages, voicechat) VALUES (?, ?, ?, ?, ?)", (userID, member.display_name, member.joined_at.strftime("%d/%m/%Y"), 0, sessionHours))
 
-                # Seleccionar los datos si no existe devuelve vacio
-                cursor.execute("SELECT voicechat FROM data WHERE id = ?", (userID))
-                data = cursor.fetchone()
-                
-                if data: # Actualizar el contador de mensajes 
-                    cursor.execute("UPDATE data SET voicechat = ? WHERE id = ?", (sessionHours, userID))
-                else: # Añadir un nuevo registro si el usuario no existe
-                    cursor.execute("INSERT INTO data (id, username, date, messages, voicechat) VALUES (?, ?, ?, ?, ?)", (userID, member.display_name, member.joined_at.strftime("%d/%m/%Y"), 0, sessionHours))
-
-                conn.commit()
+                    conn.commit()
+            except Exception as e:
+                logger.error(f"Error al añadir el tiempo de chat de voz al usuario {userID}: {e}")
 
     @commands.Cog.listener()
     async def on_guild_channel_create(self, channel):

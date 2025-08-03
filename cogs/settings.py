@@ -4,10 +4,11 @@ from discord.ext import commands
 
 # Modulo de funciones
 from func.botconfig import configJson, IsSU, DefaultServerConfig
-from func.terminal import printr
-
+from func.logger import get_logger
 from templates.views import SetupView
 from templates.embeds import SimpleEmbed
+
+logger = get_logger(__name__)
 
 # Para comandos que esten relacionados a la configuracion del bot
 class Settings(commands.Cog):
@@ -18,7 +19,7 @@ class Settings(commands.Cog):
     @IsSU()
     async def setup(self, ctx):
         if str(ctx.guild.id) not in configJson:
-            printr(f"El servidor {ctx.guild.id} no tiene un json de configuración.", 2)
+            logger.warning(f"El servidor {ctx.guild.id} no tiene un json de configuración")
             DefaultServerConfig(ctx.guild.id)
 
         view = SetupView(authorID=ctx.author.id, guildID=ctx.guild.id)
@@ -30,7 +31,7 @@ class Settings(commands.Cog):
     # Error de permisos, Falta de permisos
     async def permission_error(self, ctx, error):
         if isinstance(error, commands.MissingAnyRole): # Comprobar que falta un rol
-            printr(f"Error de permiso, {ctx.author} no tiene los permisos requeridos para ejecutar este comando.", 3)
+            logger.error(f"Error de permiso, {ctx.author} no tiene los permisos requeridos para ejecutar este comando")
             embed = SimpleEmbed("Permiso Denegado", "No tienes permisos para ejecutar este comando.", Color.red())
             await ctx.send(embed=embed, reference=ctx.message)
 

@@ -3,7 +3,7 @@ import os
 from logging.handlers import RotatingFileHandler
 from typing import Optional
 
-# GRACIAS CLAUDE AI POR HACERME ESTO QUE HARIA SIN TI
+#* GRACIAS CLAUDE AI POR HACERME ESTO QUE HARIA SIN TI
 
 class BotLogger:
     """

@@ -22,6 +22,13 @@
                     "description": "Verificacion",
                     "category": 1399398958677364860,
                     "name": "verificacion"
+                },
+                "recepcion": {
+                    "count": 0,
+                    "title": "Recepcion",
+                    "description": "Hola",
+                    "category": 1399398958677364860,
+                    "name": "recepcion"
                 }
             }
         }
