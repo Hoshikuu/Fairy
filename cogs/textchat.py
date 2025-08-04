@@ -25,23 +25,30 @@ class Textchat(commands.Cog):
             await ctx.send("Porfavor use el comando /setup o hs$setup, antes de ejecutar ningun comando.", reference=ctx.message)
             return
         
-        conn = DatabaseConnect(ctx.guild.id)
-        cursor = conn.cursor()
+        try:
+            conn = DatabaseConnect(ctx.guild.id)
+            cursor = conn.cursor()
 
-        cursor.execute("SELECT username, messages, voicechat FROM data ORDER BY messages DESC")
-        datos = cursor.fetchall() # Obtiene los datos de cantidad de mensajes de todos los usuarios
+            cursor.execute("SELECT username, messages, voicechat FROM data ORDER BY messages DESC")
+            datos = cursor.fetchall() # Obtiene los datos de cantidad de mensajes de todos los usuarios
+        except Exception as e:
+            logger.error(f"Error con la base de datos: {e}")
         
         # UFFFF EMBEDS QUE BONITOS POR DIOS
         embed = SimpleEmbed("Contador Mensajes", "", Color.blue())
 
-        # Muestra el usuario y la cantidad de mensajes enviado en una pantalla de descripcion
-        # TODO: Pa futuro separarlos en varias paginas para mejor legibilidad
-        text = ""
-        for i, (username, cantidad, voicechat) in enumerate(datos, start=1):
-            text += f"**{i}** {username} — **{cantidad} mensajes** — **{voicechat}** horas\n"
-        embed.description = text
-        logger.info("Mostrando informacion del contador")
-        await ctx.send(embed=embed, reference=ctx.message)
+        try:
+            # Muestra el usuario y la cantidad de mensajes enviado en una pantalla de descripcion
+            # TODO: Pa futuro separarlos en varias paginas para mejor legibilidad
+            text = ""
+            logger.debug("Concatenando el mensaje de contador")
+            for i, (username, cantidad, voicechat) in enumerate(datos, start=1):
+                text += f"**{i}** {username} — **{cantidad} mensajes** — **{voicechat}** horas\n"
+            embed.description = text
+            logger.info("Mostrando informacion del contador")
+            await ctx.send(embed=embed, reference=ctx.message)
+        except Exception as e:
+            logger.error(f"Error inesperado en enviar el mensaje resultado: {e}")
 
     # Esto indica si la funcion da error ejecutar esto
     @count.error

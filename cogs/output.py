@@ -21,18 +21,26 @@ class Output(commands.Cog):
 
     @commands.hybrid_command(name="export", description="Exporta los datos en un excel compartido.")
     @IsSU() # Funcion para comprobar si el usuario tiene el de super usuario
-    async def export(self, ctx, excel, sheet):
+    async def export(self, ctx, excel = None, sheet = None):
         # Prevenir la ejecucion de comandos si no esta configurado el bot.
         if CheckSetUp(ctx):
             await ctx.send("Porfavor use el comando /setup o hs$setup, antes de ejecutar ningún comando.", reference=ctx.message)
             return
         
+        if excel == None or sheet == None:
+            await ctx.send(embed=SimpleEmbed("Error", "Porfavor introduzca los argumentos para ejecutar el comando\nNombre del Excel + Hoja del Excel", Color.red()), reference=ctx.message)
+            return
+
+
+        message = await ctx.send(embed=SimpleEmbed("Conectando", "Conectandose a la base de datos", Color.red()), reference=ctx.message)
+
         conn = DatabaseConnect(str(ctx.guild.id))
         cursor = conn.cursor()
         cursor.execute("SELECT id, username, date, messages, voicechat FROM data ORDER BY messages DESC")
         datos = cursor.fetchall() # Obtiene todos los datos
         
         try:
+            await message.edit(embed=SimpleEmbed("Exportando", "Exportando los datos a CSV", Color.red()))
             # Lo guarda en un CSV
             csvData = []
             for i, (userID, username, date, messages, voicechat) in enumerate(datos, start=1):
@@ -43,6 +51,7 @@ class Output(commands.Cog):
             return
         
         try:
+            await message.edit(embed=SimpleEmbed("Guardando", "Guardando el archivo CSV", Color.red()))
             # Guarda el archivo localmente en CSV
             with open(f"csv/export-{ctx.guild.id}.csv", mode="w", newline="", encoding="utf-8") as file:
                 writer = csvwriter(file, delimiter=";")
@@ -53,6 +62,7 @@ class Output(commands.Cog):
             return
         
         try:
+            await message.edit(embed=SimpleEmbed("Conectando", "Conectando usuario al servicio de Google", Color.red()))
             gc = gspread.service_account(filename="credentials.json")
             logger.info("Credenciales cargadas correctamente, entrando con el usuario")
         except Exception as e:
@@ -60,6 +70,7 @@ class Output(commands.Cog):
             return
         
         try:
+            await message.edit(embed=SimpleEmbed("Abriendo", "Abriendo el Excel en la hoja", Color.red()))
             spreadsheet = gc.open(excel)
             worksheet = spreadsheet.worksheet(sheet)
             logger.info(f"Abriendo el excel {excel} en la hoja {sheet}.")
@@ -68,6 +79,7 @@ class Output(commands.Cog):
             return
         
         try:
+            await message.edit(embed=SimpleEmbed("Escribiendo", "Escribiendo los datos en el Excel", Color.red()))
             user, date, messages, voicechat = [], [], [], []
             with open(f"csv/export-{ctx.guild.id}.csv", "r", encoding="utf-8") as f:
                 reader = csv.reader(f, delimiter=";")
@@ -86,9 +98,12 @@ class Output(commands.Cog):
             logger.error(f"Ocurrio un error inesperado en el proceso: {e}")
         logger.info(f"Datos exportados correctamente al Excel: {worksheet.url}")
         
-        # Te envia el link con el Excel
-        embed = SimpleEmbed("Exportación de datos", "Los datos de usuarios se han exportado correctamente al Google Sheets. Se procederá a eliminar los datos antiguos.", Color.brand_green())
-        await ctx.send(f"{worksheet.url}", embed=embed, reference=ctx.message)
+        try:
+            # Te envia el link con el Excel
+            embed = SimpleEmbed("Exportación de datos", "Los datos de usuarios se han exportado correctamente al Google Sheets. Se procederá a eliminar los datos antiguos.", Color.brand_green())
+            await message.edit(content=f"{worksheet.url}", embed=embed)
+        except Exception as e:
+            logger.error(f"Error inesperado al enviar el mensaje resultado: {e}")
     
         cursor.execute("DELETE FROM data;")
         conn.commit()

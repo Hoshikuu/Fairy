@@ -25,13 +25,16 @@ def CheckFile():
 # TODO: Que se pueda cambiar dinamicamente el nombre del archivo de configuracion
 # Carga el archivo de configuracion en la variable global, Se puede llamar en ejecucion para recargar el archivo de configuracion
 def ChargeConfig():
-    CheckFile()
-    global configJson # Para poder modificar la variable
+    try:
+        CheckFile()
+        global configJson # Para poder modificar la variable
 
-    # Lee el contenido del json y lo carga a la variable
-    with open("botconfig.json", "r", encoding="utf-8") as file:
-        configJson = load(file)
-        logger.info("Fichero de configuracion cargado")
+        # Lee el contenido del json y lo carga a la variable
+        with open("botconfig.json", "r", encoding="utf-8") as file:
+            configJson = load(file)
+            logger.info("Fichero de configuracion cargado")
+    except Exception as e:
+        logger.critical("Error en cargar o recargar la configuracion")
 
 # Comprobar que se haya ejecutado el comando setup en el servidor
 def CheckSetUp(ctx):
@@ -62,23 +65,26 @@ def IsSU():
 #! Esta funcion recarga la variable de configuracion ya que añade un servidor nuevo
 # Por defecto el setup esta en falso para que el usuario tenga que ejecutar el comando
 def DefaultServerConfig(guild):
-    # Cnfiguracion por defecto
-    configJson[guild] = {
-        "setup": 0,
-        "prefix": "hs$",
-        "su": [],
-        "log": 0,
-        "ticket": {
-            "general": 0,
-            "mensaje": "Bienvenido al servidor.",
-            "category": 0,
-            "miembro": 0,
+    try:
+        # Cnfiguracion por defecto
+        configJson[guild] = {
+            "setup": 0,
+            "prefix": "hs$",
             "su": [],
-            "panels": {}
+            "log": 0,
+            "ticket": {
+                "general": 0,
+                "mensaje": "Bienvenido al servidor.",
+                "category": 0,
+                "miembro": 0,
+                "su": [],
+                "panels": {}
+            }
         }
-    }
-    with open("botconfig.json", "w", encoding="utf-8") as file:
-        dump(configJson, file, indent=4)
+        with open("botconfig.json", "w", encoding="utf-8") as file:
+            dump(configJson, file, indent=4)
 
-    logger.info("Configuracion por defecto creada para el servidor")
-    ChargeConfig() # Recarga la configuración
+        logger.info("Configuracion por defecto creada para el servidor")
+        ChargeConfig() # Recarga la configuración
+    except Exception as e:
+        logger.error(f"Error al guardar la configuracion por defecto: {e}")

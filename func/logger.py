@@ -67,7 +67,7 @@ class BotLogger:
         
         # Handler para consola (solo WARNING y superiores)
         console_handler = logging.StreamHandler()
-        console_handler.setLevel(logging.WARNING)
+        console_handler.setLevel(logging.DEBUG)
         console_formatter = logging.Formatter(
             '%(asctime)s [%(levelname)s] %(name)s - %(message)s',
             datefmt='%H:%M:%S'

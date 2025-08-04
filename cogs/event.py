@@ -23,10 +23,13 @@ class Event(commands.Cog):
     @commands.Cog.listener()
     async def on_ready(self):
         # Recargar las views de mensajes ya enviados
-        self.bot.add_view(VerificationView())
-        self.bot.add_view(VeriConfiView())
-        self.bot.add_view(ClosedTicketToolView())
-        logger.info("Views de event.py cargados correctamente")
+        try:
+            self.bot.add_view(VerificationView())
+            self.bot.add_view(VeriConfiView())
+            self.bot.add_view(ClosedTicketToolView())
+            logger.info("Views de event.py cargados correctamente")
+        except Exception as e:
+            logger.error(f"Error al cargar views antgiuas de event.py: {e}")
     
     @commands.Cog.listener()
     async def on_message(self, message):
@@ -51,15 +54,24 @@ class Event(commands.Cog):
         conn = DatabaseConnect(guildID)
         cursor = conn.cursor()
         
-        # Seleccionar los datos si no existe devuelve vacio
-        cursor.execute("SELECT messages FROM data WHERE id = ?", (userID,))
-        data = cursor.fetchone()
+        try:
+            # Seleccionar los datos si no existe devuelve vacio
+            cursor.execute("SELECT messages FROM data WHERE id = ?", (userID,))
+            data = cursor.fetchone()
+            logger.debug(f"Obteniendo los datos del usuario {userID}")
+        except Exception as e:
+            logger.error(f"Error al obtener los datos del usuario: {e}")
         
-        if data: # Actualizar el contador de mensajes 
-            newCount = data[0] + 1
-            cursor.execute("UPDATE data SET messages = ? WHERE id = ?", (newCount, userID))
-        else: # Añadir un nuevo registro si el usuario no existe
-            cursor.execute("INSERT INTO data (id, username, date, messages, voicechat) VALUES (?, ?, ?, ?, ?)", (userID, username, message.author.joined_at.strftime("%d/%m/%Y"), 1, 0))
+        try:
+            if data: # Actualizar el contador de mensajes 
+                newCount = data[0] + 1
+                cursor.execute("UPDATE data SET messages = ? WHERE id = ?", (newCount, userID))
+                logger.debug(f"Contador del usuario {userID} aumentado")
+            else: # Añadir un nuevo registro si el usuario no existe
+                cursor.execute("INSERT INTO data (id, username, date, messages, voicechat) VALUES (?, ?, ?, ?, ?)", (userID, username, message.author.joined_at.strftime("%d/%m/%Y"), 1, 0))
+                logger.debug(f"Usuario {userID} añadido a la tabla")
+        except Exception as e:
+            logger.error(f"Error en aumentar el contador del usuario: {e}")
 
         conn.commit()
         
@@ -74,31 +86,31 @@ class Event(commands.Cog):
             self.voiceSessions[userID] = time()
             
         elif before.channel is not None and after.channel is None:
-            try:
-                if userID in self.voiceSessions:
-                    logger.debug(f"Usuario {userID} salio de un chat de voz")
-                    startTime = self.voiceSessions.pop(userID)
-                    sessionHours = float(time() - startTime) / 3600
+            if userID in self.voiceSessions:
+                logger.debug(f"Usuario {userID} salio de un chat de voz")
+                startTime = self.voiceSessions.pop(userID)
+                sessionHours = float(time() - startTime) / 3600
 
-                    conn = DatabaseConnect(guildID)
-                    cursor = conn.cursor()
-                    try:
-                        # Seleccionar los datos si no existe devuelve vacio
-                        cursor.execute(f"SELECT voicechat FROM data WHERE id = ?", (userID, ))
-                        data = cursor.fetchone()
-                    except Exception as e:
-                        logger.error(f"Error al obtener los datos: {e}")
-                    
+                conn = DatabaseConnect(guildID)
+                cursor = conn.cursor()
+                try:
+                    # Seleccionar los datos si no existe devuelve vacio
+                    cursor.execute(f"SELECT voicechat FROM data WHERE id = ?", (userID, ))
+                    data = cursor.fetchone()
+                except Exception as e:
+                    logger.error(f"Error al obtener los datos: {e}")
+
+                try:
                     if data: # Actualizar el contador de mensajes 
                         logger.debug(f"Actualizando el tiempo de chat de voz del usuario en {sessionHours}")
                         cursor.execute("UPDATE data SET voicechat = ? WHERE id = ?", (data[0] + sessionHours, userID))
                     else: # Añadir un nuevo registro si el usuario no existe
-                        logger.debug("Creando un nuevo registro para el usuario")
+                        logger.debug(f"Creando un nuevo registro para el usuario {userID}")
                         cursor.execute("INSERT INTO data (id, username, date, messages, voicechat) VALUES (?, ?, ?, ?, ?)", (userID, member.display_name, member.joined_at.strftime("%d/%m/%Y"), 0, sessionHours))
+                except Exception as e:
+                    logger.error(f"Error en añadir el tiempo de chat de voz al usuario {userID}: {e}")
 
-                    conn.commit()
-            except Exception as e:
-                logger.error(f"Error al añadir el tiempo de chat de voz al usuario {userID}: {e}")
+                conn.commit()
 
     @commands.Cog.listener()
     async def on_guild_channel_create(self, channel):

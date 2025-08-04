@@ -4,4 +4,5 @@
 *.db
 __pycache__
 credentials.json
+botconfig.json
 logs/*

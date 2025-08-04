@@ -17,13 +17,17 @@ class Settings(commands.Cog):
         
     @commands.hybrid_command(name="setup", description="Inicia la configuración interactiva del bot.")
     async def setup(self, ctx):
-        if str(ctx.guild.id) not in configJson:
-            logger.warning(f"El servidor {ctx.guild.id} no tiene un json de configuración")
-            DefaultServerConfig(ctx.guild.id)
+        try:
+            if str(ctx.guild.id) not in configJson:
+                logger.warning(f"El servidor {ctx.guild.id} no tiene un json de configuración")
+                DefaultServerConfig(ctx.guild.id)
 
-        view = SetupView(authorID=ctx.author.id, guildID=ctx.guild.id)
-        msg = await ctx.send(embed=view.embed, view=view, ephemeral=False)
-        view.message = msg
+            view = SetupView(authorID=ctx.author.id, guildID=ctx.guild.id)
+            msg = await ctx.send(embed=view.embed, view=view, ephemeral=False)
+            view.message = msg
+        except Exception as e:
+            logger.critical(f"Si solo ves este mensaje de error, este error es muy inesperado en el script: {e}")
+            return
         
     # Esto indica si la funcion da error ejecutar esto
     @setup.error

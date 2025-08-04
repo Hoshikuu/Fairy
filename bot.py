@@ -10,6 +10,7 @@ from dotenv import load_dotenv
 # Modulo de funciones
 from func.botconfig import GetPrefix, ChargeConfig, configJson
 from func.logger import get_logger
+from func.starter import CheckDirs
 
 # TODO: Añadir embeds a los mensajes enviados de vuelta
 
@@ -22,7 +23,7 @@ logger.info("Configuración inical cargada")
 
 # El bot obtiene todos los permisos disponibles
 bot = commands.Bot(command_prefix=GetPrefix, intents=Intents.all())
-logger.debug("Permisos del bot establecidos.")
+logger.info("Permisos del bot establecidos.")
 
 # Obtener el token del bot
 def GetToken():
@@ -47,7 +48,11 @@ async def main():
     async with bot:
         await ChargeCogs()
         logger.info("Todos los cogs cargados correctamente")
-        await bot.start(GetToken())
+        try:
+            await bot.start(GetToken())
+        except Exception as e:
+            logger.critical(f"El token del bot es inavlido y ha fallado en iniciar el bot: {e}")
+            return
 
 @bot.event
 async def on_ready():
@@ -60,8 +65,12 @@ async def on_ready():
     for guild in bot.guilds:
         logger.debug(f"Conectado al servidor: {guild.name} con id: {guild.id}")
 
+    try:
+        CheckDirs()
+    except Exception as e:
+        logger.error("Error inesperado al crear directorios")
+
     logger.info(" === BOT CONECTADO ===")
-    print(" === BOT CONECTADO ===")
 
 # Inicia el bot
 if __name__ == "__main__":
