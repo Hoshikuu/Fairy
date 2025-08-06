@@ -268,7 +268,7 @@ class SetupView(discord.ui.View):
                 self.embed.clear_fields()
                 self.embed.add_field(name="Canal Log", value=self.log or "No configurado", inline=False)
                 self.add_item(PrevButton(parentView=self))
-                self.add_item(TicketSuButton(parentView=self))
+                self.add_item(LogButton(parentView=self))
                 self.add_item(NextButton(parentView=self))
                 
             case 7:
