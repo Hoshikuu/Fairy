@@ -2,7 +2,8 @@
 .env
 *.csv
 *.db
+*.log
 __pycache__
 credentials.json
 botconfig.json
-logs/*
+run.sh
