@@ -18,7 +18,7 @@ class Fun(commands.Cog):
     @commands.hybrid_command(name="suicide", description="Aislarse 1 minuto al ejecutar.")
     async def suicide(self, ctx):
         try:
-            # await ctx.author.timeout(timedelta(minutes=1))
+            await ctx.author.timeout(timedelta(minutes=1))
             gifs = ["https://media.tenor.com/YTWHmcGTfu8AAAAd/persona-persona3.gif", "https://media.tenor.com/EjFzN8O9tjgAAAAC/persona-3-im-gonna-persona-3-myself.gif", "https://media.tenor.com/Bsb9Z2NL0mUAAAAd/suicide-family-guy.gif", "https://media.tenor.com/s2R8VviOrwEAAAAd/fml-buenos.gif", "https://media.tenor.com/upyhim0-CUAAAAAd/spamton-deltarune.gif", "https://media.tenor.com/UlIwB2YVcGwAAAAd/waah-waa.gif"]
             logger.info(f"{ctx.author.id} se ha suicidado")
             embed = SimpleEmbed(f"{ctx.author.display_name} se ha suicidado.", "", Color.blue())
