@@ -16,6 +16,7 @@ class Settings(commands.Cog):
         self.bot = bot
         
     @commands.hybrid_command(name="setup", description="Inicia la configuración interactiva del bot.")
+    @IsSU()
     async def setup(self, ctx):
         try:
             if str(ctx.guild.id) not in configJson:

@@ -7,7 +7,7 @@ from templates.embeds import SimpleEmbed
 
 from json import dump
 
-from func.botconfig import configJson, ChargeConfig, CheckSetUp
+from func.botconfig import configJson, ChargeConfig, CheckSetUp, IsSU
 from func.logger import get_logger
 
 logger = get_logger(__name__)
@@ -31,6 +31,7 @@ class Ticket(commands.Cog):
             logger.error(f"Error inesperado al cargar views: {e}")
     
     @commands.hybrid_command(name="createticket", description="Crear un panel para tickets.")
+    @IsSU()
     async def createticket(self, ctx, id, title, description, category, name):
         # Prevenir la ejecucion de comandos si no esta configurado el bot.
         if CheckSetUp(ctx):
@@ -59,6 +60,13 @@ class Ticket(commands.Cog):
             await message.edit(embed=embed, view=PanelView(id, panels[id]))
         except Exception as e:
             logger.error(f"Error inesperado en crear el ticket {id}: {e}")
+            
+    @createticket.error
+    async def permission_error(self, ctx, error):
+        if isinstance(error, commands.MissingAnyRole): # Comprobar que falta un rol
+            logger.error(f"Error de permiso, {ctx.author} no tiene los permisos requeridos para ejecutar este comando")
+            embed = SimpleEmbed("Permiso Denegado", "No tienes permisos para ejecutar este comando.", Color.red())
+            await ctx.send(embed=embed, reference=ctx.message)
 
 # Autorun
 async def setup(bot):

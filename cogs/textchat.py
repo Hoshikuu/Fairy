@@ -1,6 +1,7 @@
 # Modulo de discord
 from discord import Color
 from discord.ext import commands
+from discord.utils import escape_markdown
 
 # Modulo de funciones
 from func.botconfig import CheckSetUp, IsSU
@@ -17,9 +18,8 @@ class Textchat(commands.Cog):
 
     # TODO: Deberia pensar en un nombre mejor para este comando no me gusta esto
     # Comando para mostrar el contador de mensajes de cada usuario
-    @commands.hybrid_command(name="count", description="Muestra el contador de mensajes.")
-    @IsSU() # Funcion para comprobar si el usuario tiene el de super usuario
-    async def count(self, ctx):
+    @commands.hybrid_command(name="top", description="Muestra el contador de mensajes y chat de voz.")
+    async def top(self, ctx):
         # Prevenir la ejecucion de comandos si no esta configurado el bot.
         if CheckSetUp(ctx):
             await ctx.send("Porfavor use el comando /setup o hs$setup, antes de ejecutar ningun comando.", reference=ctx.message)
@@ -43,7 +43,7 @@ class Textchat(commands.Cog):
             text = ""
             logger.debug("Concatenando el mensaje de contador")
             for i, (username, cantidad, voicechat) in enumerate(datos, start=1):
-                text += f"**{i}** {username} — **{cantidad} mensajes** — **{voicechat}** horas\n"
+                text += f"**{i}** {escape_markdown(username)} — **{cantidad} mensajes** — **{int(voicechat * 100) / 100}** horas\n"
             embed.description = text
             logger.info("Mostrando informacion del contador")
             await ctx.send(embed=embed, reference=ctx.message)
@@ -51,7 +51,7 @@ class Textchat(commands.Cog):
             logger.error(f"Error inesperado en enviar el mensaje resultado: {e}")
 
     # Esto indica si la funcion da error ejecutar esto
-    @count.error
+    @top.error
     # Error de permisos, Falta de permisos
     async def permission_error(self, ctx, error):
         if isinstance(error, commands.MissingAnyRole): # Comprobar que falta un rol
