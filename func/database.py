@@ -42,7 +42,39 @@ def CreateDatabase(guild):
         
         logger.warning(f"Nueva tabla creada para el servidor: {guild}.")
         conn.commit()
+        conn.close()
         
     except Exception as e:
         logger.error(f"Error inesperado en la creacion de una nueva base de datos {guild}.db: {e}")
+
+# Crea la tabla para la ruleta diaria
+def CreateRouletteDatabase(guild):
+    try:
+        conn = DatabaseConnect(guild)
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT 1 
+            FROM sqlite_master 
+            WHERE type='table' AND name='roulette';
+        """)
         
+        if cursor.fetchone():
+            logger.debug("Tabla ya existe")
+            conn.close()
+            return
+
+        logger.warning(f"Creando una nueva Base de Datos de ruleta para {guild}")
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS roulette (
+            id INTEGER PRIMARY KEY,
+            username TEXT,
+            number TEXT
+        )
+        """)
+        
+        logger.warning(f"Nueva tabla creada para el servidor: {guild}.")
+        conn.commit()
+        conn.close()
+        
+    except Exception as e:
+        logger.error(f"Error inesperado en la creacion de una nueva base de datos {guild}.db: {e}")
