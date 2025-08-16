@@ -1,28 +1,33 @@
-# Modulo de discord
 from discord import Color
 from discord.ext import commands
 from discord.utils import escape_markdown
 
-# Modulo de funciones
-from func.botconfig import CheckSetUp, IsSU
+from func.botconfig import CheckSetUp
 from func.database import DatabaseConnect
 from func.logger import get_logger
 from templates.embeds import SimpleEmbed
 
 logger = get_logger(__name__)
 
-# Comandos relacionados a mensajes de texto
 class Textchat(commands.Cog):
+    """Comandos relacionado a los mensajes de texto
+
+    Args:
+        commands (Cog): Cog
+    """
     def __init__(self, bot):
         self.bot = bot
 
-    # TODO: Deberia pensar en un nombre mejor para este comando no me gusta esto
-    # Comando para mostrar el contador de mensajes de cada usuario
     @commands.hybrid_command(name="top", description="Muestra el contador de mensajes y chat de voz.")
     async def top(self, ctx):
-        # Prevenir la ejecucion de comandos si no esta configurado el bot.
+        """Muestra la cantidad de mensajes escritos por cada usuario
+
+        Args:
+            ctx (ctx): Mensaje
+        """
+        # Prevenir la ejecución de comandos si no esta configurado el bot.
         if CheckSetUp(ctx):
-            await ctx.send("Porfavor use el comando /setup o hs$setup, antes de ejecutar ningun comando.", reference=ctx.message)
+            await ctx.send("Por favor use el comando /setup o hs$setup, antes de ejecutar ningún comando.", reference=ctx.message)
             return
         
         try:
@@ -34,23 +39,22 @@ class Textchat(commands.Cog):
         except Exception as e:
             logger.error(f"Error con la base de datos: {e}")
         
-        # UFFFF EMBEDS QUE BONITOS POR DIOS
         embed = SimpleEmbed("Contador Mensajes", "", Color.blue())
 
         try:
-            # Muestra el usuario y la cantidad de mensajes enviado en una pantalla de descripcion
+            # Muestra el usuario y la cantidad de mensajes enviado en una pantalla de descripción
             # TODO: Pa futuro separarlos en varias paginas para mejor legibilidad
             text = ""
             logger.debug("Concatenando el mensaje de contador")
             for i, (username, cantidad, voicechat) in enumerate(datos, start=1):
                 text += f"**{i}** {escape_markdown(username)} — **{cantidad} mensajes** — **{int(voicechat * 100) / 100}** horas\n"
             embed.description = text
-            logger.info("Mostrando informacion del contador")
+            logger.info("Mostrando información del contador")
             await ctx.send(embed=embed, reference=ctx.message)
         except Exception as e:
             logger.error(f"Error inesperado en enviar el mensaje resultado: {e}")
 
-    # Esto indica si la funcion da error ejecutar esto
+    # Esto indica si la función da error ejecutar esto
     @top.error
     # Error de permisos, Falta de permisos
     async def permission_error(self, ctx, error):
@@ -59,6 +63,6 @@ class Textchat(commands.Cog):
             logger.error(f"Error de permiso, {ctx.author} no tiene los permisos requeridos para ejecutar este comando.")
             await ctx.send(embed=embed, reference=ctx.message)
 
-# Autorun
+# Auto run
 async def setup(bot):
     await bot.add_cog(Textchat(bot))

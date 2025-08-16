@@ -16,23 +16,35 @@ logger = get_logger(__name__)
 
 # Template for cog
 class Output(commands.Cog):
+    """Comandos para exportar datos.
+
+    Args:
+        commands (Cog): Cog
+    """
     def __init__(self, bot):
         self.bot = bot
 
     @commands.hybrid_command(name="export", description="Exporta los datos en un excel compartido.")
-    @IsSU() # Funcion para comprobar si el usuario tiene el de super usuario
-    async def export(self, ctx, excel = None, sheet = None):
-        # Prevenir la ejecucion de comandos si no esta configurado el bot.
+    @IsSU() # Función para comprobar si el usuario tiene el de super usuario
+    async def export(self, ctx, excel, sheet):
+        """Exportar los datos de mensajes a Excel con una plantilla predefinida
+
+        Args:
+            ctx (ctx): Mensaje
+            excel (str): Nombre del excel al que insertar los datos
+            sheet (str): Hoja de datos del excel al que insertar los datos
+        """
+        # Prevenir la ejecución de comandos si no esta configurado el bot.
         if CheckSetUp(ctx):
-            await ctx.send("Porfavor use el comando /setup o hs$setup, antes de ejecutar ningún comando.", reference=ctx.message)
+            await ctx.send("Por favor use el comando /setup o hs$setup, antes de ejecutar ningún comando.", reference=ctx.message)
             return
         
         if excel == None or sheet == None:
-            await ctx.send(embed=SimpleEmbed("Error", "Porfavor introduzca los argumentos para ejecutar el comando\nNombre del Excel + Hoja del Excel", Color.red()), reference=ctx.message)
+            await ctx.send(embed=SimpleEmbed("Error", "Por favor introduzca los argumentos para ejecutar el comando\nNombre del Excel + Hoja del Excel", Color.red()), reference=ctx.message)
             return
 
 
-        message = await ctx.send(embed=SimpleEmbed("Conectando", "Conectandose a la base de datos", Color.red()), reference=ctx.message)
+        message = await ctx.send(embed=SimpleEmbed("Conectando", "Conectando a la base de datos", Color.red()), reference=ctx.message)
 
         conn = DatabaseConnect(str(ctx.guild.id))
         cursor = conn.cursor()
@@ -88,18 +100,18 @@ class Output(commands.Cog):
                     date.append([row[2]])
                     messages.append([row[3]])
                     voicechat.append([row[4]])
-            logger.info("Datos del CSV local leidos satisfactoriamente")
+            logger.info("Datos del CSV local leídos satisfactoriamente")
             worksheet.update(date, f"A2:A{2 + len(date) - 1}")
             worksheet.update(voicechat, f"B2:B{2 + len(voicechat) - 1}")
             worksheet.update(messages, f"C2:C{2 + len(messages) - 1}")
             worksheet.update(user, f"F2:F{2 + len(user) - 1}")
             logger.info("Datos insertados en el Excel satisfactoriamente")
         except Exception as e:
-            logger.error(f"Ocurrio un error inesperado en el proceso: {e}")
+            logger.error(f"Ocurrió un error inesperado en el proceso: {e}")
         logger.info(f"Datos exportados correctamente al Excel: {worksheet.url}")
         
         try:
-            # Te envia el link con el Excel
+            # Te envía el link con el Excel
             embed = SimpleEmbed("Exportación de datos", "Los datos de usuarios se han exportado correctamente al Google Sheets. Se procederá a eliminar los datos antiguos.", Color.brand_green())
             await message.edit(content=f"{worksheet.url}", embed=embed)
         except Exception as e:
@@ -109,7 +121,7 @@ class Output(commands.Cog):
         conn.commit()
         logger.warning("Datos antiguos eliminados de la base de datos")
 
-    # Esto indica si la funcion da error ejecutar esto
+    # Esto indica si la función da error ejecutar esto
     @export.error
     # Error de permisos, Falta de permisos
     async def permission_error(self, ctx, error):
@@ -118,6 +130,6 @@ class Output(commands.Cog):
             embed = SimpleEmbed("Permiso Denegado", "No tienes permisos para ejecutar este comando.", Color.red())
             await ctx.send(embed=embed, reference=ctx.message)
 
-# Autorun
+# Auto run
 async def setup(bot):
     await bot.add_cog(Output(bot))

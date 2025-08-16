@@ -1,19 +1,21 @@
-# Modulo de discord
 from discord import Color
 from discord.ext import commands
-
-from templates.views import PanelView
-from templates.embeds import SimpleEmbed
 
 from json import dump
 
 from func.botconfig import configJson, ChargeConfig, CheckSetUp, IsSU
 from func.logger import get_logger
+from templates.views import PanelView
+from templates.embeds import SimpleEmbed
 
 logger = get_logger(__name__)
 
-# Comandos para manejar tickets
 class Ticket(commands.Cog):
+    """Comandos para manejar tickets
+
+    Args:
+        commands (Cog): Cog
+    """
     def __init__(self, bot):
         self.bot = bot
     
@@ -32,10 +34,20 @@ class Ticket(commands.Cog):
     
     @commands.hybrid_command(name="createticket", description="Crear un panel para tickets.")
     @IsSU()
-    async def createticket(self, ctx, id, title, description, category, name):
-        # Prevenir la ejecucion de comandos si no esta configurado el bot.
+    async def createticket(self, ctx, id, title, description, category, name = "ticket"):
+        """Crear un nuevo panel de ticket
+
+        Args:
+            ctx (ctx): Mensaje
+            id (str): Identificador del panel, funciones especiales dependiendo del ID
+            title (str): Titulo principal del panel
+            description (str): Descripción del panel
+            category (str): Categoría donde se desplegarán los nuevos tickets
+            name (str, optional): Nombre del ticket nuevo que se crea
+        """
+        # Prevenir la ejecución de comandos si no esta configurado el bot.
         if CheckSetUp(ctx):
-            await ctx.send("Porfavor use el comando /setup o hs$setup, antes de ejecutar ningun comando.", reference=ctx.message)
+            await ctx.send("Por favor use el comando /setup o hs$setup, antes de ejecutar ningún comando.", reference=ctx.message)
             return
 
         try :
@@ -51,9 +63,9 @@ class Ticket(commands.Cog):
                 }
                 configJson[str(ctx.guild.id)]["ticket"]["panels"] = panels
                 with open("botconfig.json", "w", encoding="utf-8") as file:
-                    logger.debug("Escribiendo nueva configuracion")
+                    logger.debug("Escribiendo nueva configuración")
                     dump(configJson, file, indent=4)
-                logger.warning("Recargando el fichero de configuracion")
+                logger.warning("Recargando el fichero de configuración")
                 ChargeConfig()
         
             embed = SimpleEmbed(title, description, Color.dark_blue())
@@ -68,6 +80,6 @@ class Ticket(commands.Cog):
             embed = SimpleEmbed("Permiso Denegado", "No tienes permisos para ejecutar este comando.", Color.red())
             await ctx.send(embed=embed, reference=ctx.message)
 
-# Autorun
+# Auto run
 async def setup(bot):
     await bot.add_cog(Ticket(bot))

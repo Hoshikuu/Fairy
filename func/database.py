@@ -1,16 +1,21 @@
-# Modulo para manejar la base de datos
 from sqlite3 import connect
 
-# Modulos extra
 from os.path import isfile
 
-# Modulo de funciones
 from func.logger import get_logger
 
 logger = get_logger(__name__)
 
 # Conecta a la base de datos dependiendo del id del servidor, si no existe lo crea
-def DatabaseConnect(guild): # !!: Recuerda siempre pasarle el ctx.guild.id
+def DatabaseConnect(guild): #! Recuerda siempre pasar le el ctx.guild.id
+    """Conecta a la base de datos del servidor
+
+    Args:
+        guild (str): ID del servidor
+
+    Returns:
+        sqlite.connection: Conexión a la base de sqlite3
+    """
     CreateDatabase(guild)
     try:
         conn = connect(f"database/{guild}.db")
@@ -19,8 +24,12 @@ def DatabaseConnect(guild): # !!: Recuerda siempre pasarle el ctx.guild.id
     except Exception as e:
         logger.error(f"Error inesperado al conectar con la base de datos {guild}.db: {e}")
     
-# Crea la tabla principal para almacenar la cantidad de mensajes enviados por usuario y demas
 def CreateDatabase(guild):
+    """Crea una base de datos nueva para el servidor
+    
+    Args:
+        guild (str): ID del servidor
+    """
     try:
         if isfile(f"database/{guild}.db"):
             logger.debug("Base de datos existe")
@@ -40,35 +49,20 @@ def CreateDatabase(guild):
         )
         """)
         
-        logger.warning(f"Nueva tabla creada para el servidor: {guild}.")
-        conn.commit()
-        conn.close()
-        
-    except Exception as e:
-        logger.error(f"Error inesperado en la creacion de una nueva base de datos {guild}.db: {e}")
-
-# Crea la tabla para la ruleta diaria
-def CreateRouletteDatabase(guild):
-    try:
-        conn = DatabaseConnect(guild)
-        cursor = conn.cursor()
-        cursor.execute("""
-            SELECT 1 
-            FROM sqlite_master 
-            WHERE type='table' AND name='roulette';
-        """)
-        
-        if cursor.fetchone():
-            logger.debug("Tabla ya existe")
-            conn.close()
-            return
-
-        logger.warning(f"Creando una nueva Base de Datos de ruleta para {guild}")
         cursor.execute("""
         CREATE TABLE IF NOT EXISTS roulette (
             id INTEGER PRIMARY KEY,
             username TEXT,
             number TEXT
+        )
+        """)
+        
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS economy (
+            id INTEGER PRIMARY KEY,
+            username TEXT,
+            date TEXT,
+            money INTEGER DEFAULT 0
         )
         """)
         

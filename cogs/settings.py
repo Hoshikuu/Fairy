@@ -10,14 +10,23 @@ from templates.embeds import SimpleEmbed
 
 logger = get_logger(__name__)
 
-# Para comandos que esten relacionados a la configuracion del bot
 class Settings(commands.Cog):
+    """Comandos relacionados con la configuración del bot
+
+    Args:
+        commands (Cog): Cog
+    """
     def __init__(self, bot):
         self.bot = bot
         
     @commands.hybrid_command(name="setup", description="Inicia la configuración interactiva del bot.")
     @IsSU()
     async def setup(self, ctx):
+        """Comando para configurar el bot en el servidor
+
+        Args:
+            ctx (ctx): Mensaje
+        """
         try:
             if str(ctx.guild.id) not in configJson:
                 logger.warning(f"El servidor {ctx.guild.id} no tiene un json de configuración")
@@ -30,7 +39,7 @@ class Settings(commands.Cog):
             logger.critical(f"Si solo ves este mensaje de error, este error es muy inesperado en el script: {e}")
             return
         
-    # Esto indica si la funcion da error ejecutar esto
+    # Esto indica si la función da error ejecutar esto
     @setup.error
     # Error de permisos, Falta de permisos
     async def permission_error(self, ctx, error):
@@ -39,6 +48,6 @@ class Settings(commands.Cog):
             embed = SimpleEmbed("Permiso Denegado", "No tienes permisos para ejecutar este comando.", Color.red())
             await ctx.send(embed=embed, reference=ctx.message)
 
-# Autorun
+# Auto run
 async def setup(bot):
     await bot.add_cog(Settings(bot))
