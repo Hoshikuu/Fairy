@@ -44,6 +44,7 @@ class Textchat(commands.Cog):
         try:
             # Muestra el usuario y la cantidad de mensajes enviado en una pantalla de descripción
             # TODO: Pa futuro separarlos en varias paginas para mejor legibilidad
+            # TODO: Añadir un registro de cuando se comienza a registrar los mensajes, actualizar el registro después de hacer export
             text = ""
             logger.debug("Concatenando el mensaje de contador")
             for i, (username, cantidad, voicechat) in enumerate(datos, start=1):

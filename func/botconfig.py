@@ -91,6 +91,7 @@ def IsSU():
 # Se llama a esta función cuando un servidor no esta registrado en el json
 #! Esta función recarga la variable de configuración ya que añade un servidor nuevo
 # Por defecto el setup esta en falso para que el usuario tenga que ejecutar el comando
+# FIXME: Esto es muy ineficiente
 def DefaultServerConfig(guild):
     """Añade un servidor con la configuración por defecto
 

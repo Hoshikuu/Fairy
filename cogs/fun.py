@@ -49,21 +49,10 @@ class Fun(commands.Cog):
             # Decide un numero aleatorio entre el limite
             number = randint(min, max)
             logger.debug(f"Numero aleatorio es {number}")
-            await ctx.send(f"Tu numero es: {number}", reference=ctx.message)
+            await ctx.send(embed=SimpleEmbed(number, "", Color.green()), reference=ctx.message)
         except Exception as e:
             logger.error(f"Error inesperado: {e}")
-            
-    # Daily Roulette
-    @commands.hybrid_command(name="roulette", description="Ruleta diaria")
-    async def roulette(self, ctx, number):
-        # TODO: Guardar el numero que se introduce a la ruleta
-        
-        try:
-            await ctx.send(f"{number}", reference=ctx.message)
-        except Exception as e:
-            logger.error(f"Ha ocurrido un error inesperado: {e}")
-    
-    
+    # TODO: Mas comandos de fun
 
 # Auto run
 async def setup(bot):

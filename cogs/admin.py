@@ -1,11 +1,8 @@
-# Modulo de discord
 from discord import Color
 from discord.ext import commands
 
-from csv import writer as csvwriter
-
-import gspread
-import csv
+from csv import writer as csvwriter, reader as csvreader
+from gspread import service_account
 
 from func.database import DatabaseConnect
 from func.botconfig import CheckSetUp, IsSU
@@ -14,16 +11,15 @@ from templates.embeds import SimpleEmbed
 
 logger = get_logger(__name__)
 
-# Template for cog
-class Output(commands.Cog):
-    """Comandos para exportar datos.
+class Admin(commands.Cog):
+    """Comandos de administración para el bot
 
     Args:
         commands (Cog): Cog
     """
     def __init__(self, bot):
         self.bot = bot
-
+    
     @commands.hybrid_command(name="export", description="Exporta los datos en un excel compartido.")
     @IsSU() # Función para comprobar si el usuario tiene el de super usuario
     async def export(self, ctx, excel, sheet):
@@ -75,7 +71,7 @@ class Output(commands.Cog):
         
         try:
             await message.edit(embed=SimpleEmbed("Conectando", "Conectando usuario al servicio de Google", Color.red()))
-            gc = gspread.service_account(filename="credentials.json")
+            gc = service_account(filename="credentials.json")
             logger.info("Credenciales cargadas correctamente, entrando con el usuario")
         except Exception as e:
             logger.error(f"Credenciales del usuario fallaron en cargarse: {e}")
@@ -94,7 +90,7 @@ class Output(commands.Cog):
             await message.edit(embed=SimpleEmbed("Escribiendo", "Escribiendo los datos en el Excel", Color.red()))
             user, date, messages, voicechat = [], [], [], []
             with open(f"csv/export-{ctx.guild.id}.csv", "r", encoding="utf-8") as f:
-                reader = csv.reader(f, delimiter=";")
+                reader = csvreader(f, delimiter=";")
                 for row in reader:
                     user.append([row[1]])
                     date.append([row[2]])
@@ -129,7 +125,9 @@ class Output(commands.Cog):
             logger.error(f"Error de permiso, {ctx.author} no tiene los permisos requeridos para ejecutar este comando")
             embed = SimpleEmbed("Permiso Denegado", "No tienes permisos para ejecutar este comando.", Color.red())
             await ctx.send(embed=embed, reference=ctx.message)
+    
+    # TODO: Comando purge (eliminar cierta cantidad de mensajes en el canal)
 
 # Auto run
 async def setup(bot):
-    await bot.add_cog(Output(bot))
+    await bot.add_cog(Admin(bot))

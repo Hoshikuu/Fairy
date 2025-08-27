@@ -1,13 +1,10 @@
-# Modulos de discord para manejar el Bot
 from discord import Intents
 from discord.ext import commands
 
-# Modulos Extras
 from os import listdir, getenv
 from asyncio import run
 from dotenv import load_dotenv
 
-# Modulo de funciones
 from func.botconfig import GetPrefix, ChargeConfig, configJson
 from func.logger import get_logger
 from func.starter import CheckDirs
@@ -17,9 +14,9 @@ from func.starter import CheckDirs
 # Logger centralizado
 logger = get_logger(__name__)
 
-# Carga la configuracion inicial
+# Carga la configuración inicial
 ChargeConfig()
-logger.info("Configuración inical cargada")
+logger.info("Configuración inicial cargada")
 
 # El bot obtiene todos los permisos disponibles
 bot = commands.Bot(command_prefix=GetPrefix, intents=Intents.all())
@@ -32,7 +29,7 @@ def GetToken():
     logger.info("Token del bot obtenido")
     return token
 
-# Carga los cogs del bot automaticamente
+# Carga los cogs del bot automáticamente
 async def ChargeCogs():
     for cog in listdir("./cogs"):
         if not cog.endswith(".py"): # Busca los archivos de python y los carga al bot
@@ -43,7 +40,7 @@ async def ChargeCogs():
         except Exception as e:
             logger.critical(f"{cog} cog no se pudo cargar, es posible que algunos comandos y funcionalidades dejen de funcionar: {e}")
 
-# Funcion principal para ejecutar el bot
+# Función principal para ejecutar el bot
 async def main():
     async with bot:
         await ChargeCogs()
@@ -51,7 +48,7 @@ async def main():
         try:
             await bot.start(GetToken())
         except Exception as e:
-            logger.critical(f"El token del bot es inavlido y ha fallado en iniciar el bot: {e}")
+            logger.critical(f"El token del bot es invalido y ha fallado en iniciar el bot: {e}")
             return
 
 @bot.event

@@ -33,7 +33,9 @@ class Economy(commands.Cog):
             await ctx.send(embed=embed, reference=ctx.message)
         except Exception as e:
             logger.error(f"Error inesperado {e}")
-            
+    
+    # TODO: Implementar bien la economía en el bot
+    
     @commands.hybrid_command(name="daily", description="Recompensa diaria")
     async def daily(self, ctx):
         """Recompensa diaria después de completar misiones
@@ -46,6 +48,9 @@ class Economy(commands.Cog):
         cursor = conn.cursor()
         
         cursor.execute(f"""SELECT money FROM economy WHERE id = {ctx.author.id}""")
+        
+    # TODO: Crear una tienda de puntos para gasta las monedas
+    # TODO: Pensar en diferentes recompensas que poder reclamar
         
 # Auto run
 async def setup(bot):

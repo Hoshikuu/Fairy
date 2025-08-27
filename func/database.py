@@ -49,6 +49,8 @@ def CreateDatabase(guild):
         )
         """)
         
+        # BUG: buscar alguna solución para que se puedan crear las tablas dinámicamente si la base de datos existe de una versión antigua
+        
         cursor.execute("""
         CREATE TABLE IF NOT EXISTS roulette (
             id INTEGER PRIMARY KEY,
