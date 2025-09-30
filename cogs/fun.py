@@ -5,7 +5,7 @@ from datetime import timedelta, datetime
 from random import choice, randint
 
 from func.logger import get_logger
-from templates.embeds import SimpleEmbed
+from models.embeds import SimpleEmbed
 
 logger = get_logger(__name__)
 

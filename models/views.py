@@ -1,7 +1,7 @@
 import discord
 
 from func.botconfig import configJson, ChargeConfig
-from templates.buttons import *
+from models.buttons import *
 
 from json import dump
 

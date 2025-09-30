@@ -4,8 +4,8 @@ from json import dump
 
 from func.botconfig import ChargeConfig, configJson
 
-from templates.modals import *
-from templates.embeds import SimpleEmbed
+from models.modals import *
+from models.embeds import SimpleEmbed
 
 class NextButton(discord.ui.Button):
     def __init__(self, parentView):

@@ -1,3 +1,10 @@
+#                                                                    ---------------------------------
+#
+#                                                                       Script  creado por  Hoshiku
+#                                                                       https://github.com/Hoshikuu
+#
+#                                                                    ---------------------------------
+
 from discord import Intents
 from discord.ext import commands
 

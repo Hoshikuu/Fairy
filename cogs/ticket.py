@@ -5,8 +5,8 @@ from json import dump
 
 from func.botconfig import configJson, ChargeConfig, CheckSetUp, IsSU
 from func.logger import get_logger
-from templates.views import PanelView
-from templates.embeds import SimpleEmbed
+from models.views import PanelView
+from models.embeds import SimpleEmbed
 
 logger = get_logger(__name__)
 

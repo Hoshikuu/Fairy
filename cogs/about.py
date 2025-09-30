@@ -3,7 +3,7 @@ from discord.ext import commands
 
 from func.version import __tag__, __commit__, __branch__
 from func.logger import get_logger
-from templates.embeds import SimpleEmbed
+from models.embeds import SimpleEmbed
 
 logger = get_logger(__name__)
 

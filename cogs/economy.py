@@ -2,8 +2,8 @@ from discord import Color, Embed
 from discord.ext import commands
 
 from func.logger import get_logger
-from func.database import DatabaseConnect
-from templates.embeds import SimpleEmbed
+from backup.database import DatabaseConnect
+from models.embeds import SimpleEmbed
 
 logger = get_logger(__name__)
 

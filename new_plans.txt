@@ -1,0 +1,62 @@
+Este va a ser el nuevo plan del bot
+
+1. Hacer una web no hace falta tan complejo, una web, que puedas configurar directamente, el bot
+
+Ahora explico como poder confiurar el bot de un servidor en concreto
+Al querer configurar un bot vas a necesitar un Token que la va a proporcionar el bot a la hora de llamar una funcion
+por ejemplo /token este comando lo que hara es crear un token para el servidor actual
+y a partir de eso, poder directamente introducir ese token en la web, para poder configurar el bot en el servidor actual
+la configuracion, se guardara en una base de datos, en vez, de un fichero, para hacerlo mas seguro, y que no se elimine el fichero
+
+
+2. La interfaz de la web, tendra que mostrar varias pestañas, para configurar texto, imagenes de cada apartado.
+
+Basicamente introducir el token y directamente poder configurar los diferentes parametros
+
+no se tendra que iniciar sesion ni nada ya que no se como hacerlo
+
+
+3. Funcionalidades que debe de tener el bot
+
+Contar mensajes (para luego medir la actividad), e poder exportarlo a un excel
+ - Estas funcionalidades ya estan completas, se podria optimizar un poquito
+
+Contar tiempo en vc (mas o menos lo mismo)
+
+Gestionar tickets, que en la interfaz web se pueda crear diferentes tipos de tickets que gestionen las cosas
+por ejemplo, verificacion, dudas, reportes, y demas, y que se pueda deployear en el discord rapidamente
+
+Bienvenidas y despedidas, basicamente lo que dice, una pestaña en la web tambien, para poder personalizar estas cosas
+
+Añadir comandos para banear, timeout, kickear, los mismos del nekotina
+
+Comandos para divertirse, Apuestas, mas que otro comando de ese estilo
+
+y una economia que se pueda gastar en una tienda de puntos para diferentes privilegios (roles, y demas)
+
+
+4. mantener todo el codigo en ingles, menos los comentarios o los docstrings
+
+mantener el codigo limpio y optimizado
+
+
+
+
+
+
+IDEAS
+Meter la configuracion en base de datos, crear una base de datos general, donde se almacenaran los id de servidores y tokens de cada uno, los tokens se generara de forma aleatoria
+tambien que se pueda renovar el token con un comando solo administradores, al darle al comando de mostrar token /token, que te enseñe el token del servidor y una contraseña de un solo uso
+para acceder a la configuracion del servior, modificarlo mas seguridad, una vez usada la contraseña se elimina y ya no se puede usar para acceder, mejor que la contraseña sea por horas en vez
+de eso ya que si no lo limitamos todo el rato se podra acceder por fuerza bruta por url
+
+esta parte esta clara, luego como almacenar la configuracion del bot en una base de datos y como poder acceder a esa informacion de manera sencilla
+se creara una base de datos con el id del servidor de la configuracion, se guardara la configuracion en tablas, de diferentes secciones de configuracion
+
+es posible creando una funcion que se conecte y lea la informacion dinamicamente en la base de datos, de manera que se pueda acceder a cualquier valor sin tener que escribir codigo extra
+de lectura de base de datos, que se puedan definir como parametros tabla deseada, y valor deseado, que pasaria si se desea mas de un valor?
+no seria muy efectivo tener que estar llamando a la funcion cada rato valor por valor, lo suyo es poder generar codigo sql dinamicamente dependiendo de los valores
+que se hayan introducido, por ejemplo, pasar como argumento la base de datos a la que acceder, la tabla a la que acceder, y una tupla con los valores que acceder
+y asi luego que genere el codigo sql para leer en la base de datos de forma dinamica a base de esos datos, y asi no tener que repetir cosas
+
+luego tambien se necesitaran funciones de guardado y cargado de configuracion, se podra hacer lo mismo que antes para no tener tanta abundancia de codigo

@@ -5,8 +5,8 @@ from discord.ext import commands
 # Modulo de funciones
 from func.botconfig import configJson, IsSU, DefaultServerConfig
 from func.logger import get_logger
-from templates.views import SetupView
-from templates.embeds import SimpleEmbed
+from models.views import SetupView
+from models.embeds import SimpleEmbed
 
 logger = get_logger(__name__)
 

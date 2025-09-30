@@ -1,1 +1,6 @@
-# Para que python trate esta carpeta como un modulo.
+#                                                                    ---------------------------------
+#
+#                                                                       Modulo  creado por  Hoshiku
+#                                                                       https://github.com/Hoshikuu
+#
+#                                                                    ---------------------------------

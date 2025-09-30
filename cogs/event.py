@@ -5,9 +5,9 @@ from time import time
 from datetime import date
 
 from func.botconfig import configJson, DefaultServerConfig, GetPrefix
-from func.database import DatabaseConnect
-from templates.views import VerificationView, VeriConfiView, ClosedTicketToolView
-from templates.embeds import SimpleEmbed
+from backup.database import DatabaseConnect
+from models.views import VerificationView, VeriConfiView, ClosedTicketToolView
+from models.embeds import SimpleEmbed
 from func.logger import get_logger
 
 logger = get_logger(__name__)

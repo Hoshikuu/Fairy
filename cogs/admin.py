@@ -4,10 +4,10 @@ from discord.ext import commands
 from csv import writer as csvwriter, reader as csvreader
 from gspread import service_account
 
-from func.database import DatabaseConnect
+from backup.database import DatabaseConnect
 from func.botconfig import CheckSetUp, IsSU
 from func.logger import get_logger
-from templates.embeds import SimpleEmbed
+from models.embeds import SimpleEmbed
 
 logger = get_logger(__name__)
 
