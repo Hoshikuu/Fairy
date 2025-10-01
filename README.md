@@ -1,6 +1,6 @@
-# HoyoStars
+# Fairy
 
-**HoyoStars** es un bot privado para Discord (para uso interno), desarrollado por Hoshikuu bajo licencia MIT.
+**Fairy** es un bot privado para Discord (para uso interno), desarrollado por Hoshikuu bajo licencia MIT.
 
 ## Descripción general
 
@@ -11,7 +11,7 @@ No está destinado para distribución pública.
 
 - Proporciona utilidades internas específicas para el servidor.
 - Código modular organizado en carpetas como `cogs`, `func` y `templates`.
-- Última versión: **v0.4.0 Alpha** (3 de agosto de 2025).
+- Última versión: **v0.5.0 Alpha** (3 de agosto de 2025).
 - Escrito completamente en **Python**.
 
 ---
@@ -31,8 +31,8 @@ No está destinado para distribución pública.
 
 1. Clona el repositorio:
    ```bash
-   git clone https://github.com/Hoshikuu/HoyoStars.git
-   cd HoyoStars
+   git clone https://github.com/Hoshikuu/Fairy.git
+   cd Fairy
    ```
 
 2. Instala las dependencias:
@@ -74,7 +74,7 @@ Si deseas colaborar, contacta directamente con el autor.
 
 ## Licencia
 
-HoyoStars está publicado bajo la Licencia MIT.
+Fairy está publicado bajo la Licencia MIT.
 Consulta el archivo LICENSE para más información.
 
 ## Créditos

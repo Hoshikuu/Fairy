@@ -26,7 +26,10 @@ def create_global_db():
     cursor.execute("""
     CREATE TABLE "token" (
         "id"	TEXT NOT NULL UNIQUE,
-        "token"	TEXT UNIQUE,
+        "token"	TEXT NOT NULL UNIQUE,
+        "password"	TEXT NOT NULL,
+        "data"	TEXT NOT NULL,
+        "valid"	TEXT NOT NULL,
         PRIMARY KEY("id")
     );
     """)
@@ -57,19 +60,19 @@ def get_global_db(token: str):
         DataError: Cuando no se encuentre un token en la base de datos
 
     Returns:
-        str: Devuelve la fila del token o None si no existe
+        tuple: Devuelve una tupla con los datos del token si se encuentra, None si no se encuentra
     """
     
     check_file()
     try:
         conn = connect("database/global.db")
         logger.debug("Conectado a la base de datos global.db")
-        if token != None:
+        if token is not None:
             cursor = conn.cursor()
-            cursor.execute("SELECT * FROM token WHERE id = ?", (token,))
+            cursor.execute("SELECT * FROM token WHERE token = ?", (token,))
             data = cursor.fetchone()
-            print(data)
-            return data
+            if data is not None:
+                return data
         raise DataError
     
     except DataError as e:
