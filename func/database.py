@@ -7,6 +7,8 @@
 
 # database.py - V2.0
 
+# Dynamic database management system for multiple configurations
+
 from sqlite3 import connect, DataError
 from os.path import isfile, isdir
 from os import mkdir
@@ -269,3 +271,33 @@ def insert_db(id: str, table: str, values: str, data: tuple):
         logger.error(f"Error inesperado al insertar datos en la base de datos {id}.db: {e}")
         return False
     
+def update_db(id: str, table: str, set_field: str, set_value: str, what: str, condition: str):
+    """Actualiza datos en la base de datos
+
+    Args:
+        id (str): Id de la base de datos
+        table (str): La tabla de la base de datos
+        set_field (str): El campo a actualizar
+        set_value (str): El nuevo valor del campo
+        what (str): Que campo se va a comparar
+        condition (str): La condición a comparar
+
+    Returns:
+        bool: Devuelve True si se ha actualizado correctamente, False si ha habido un error
+    """
+
+    check_file(id)
+    try:
+        conn = connect(f"database/{id}.db")
+        cursor = conn.cursor()
+        cursor.execute(
+        f"""
+        UPDATE {table} SET {set_field} = {set_value} WHERE {what} = {condition}
+        """)
+        conn.commit()
+        conn.close()
+        logger.info(f"Datos actualizados correctamente en la base de datos {id}.db")
+        return True
+    except Exception as e:
+        logger.error(f"Error inesperado al actualizar datos en la base de datos {id}.db: {e}")
+        return False

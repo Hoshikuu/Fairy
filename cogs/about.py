@@ -26,7 +26,7 @@ class About(commands.Cog):
             ctx (ctx): Mensaje
         """
         logger.debug("Ejecutando comando info")
-        embed = SimpleEmbed("HoyoStars", "Un bot privado para el servidor HoyoStars.", Color.dark_blue())
+        embed = SimpleEmbed("Fairy", "Un bot privado para el servidor Fairy.", Color.dark_blue())
         embed.add_field(name="Ping", value=f"{round(ctx.bot.latency * 1000)}ms", inline=False)
         embed.add_field(name="Creador", value="<@853193606529024041>", inline=True)
         embed.set_footer(text="Suban me el sueldo.")
@@ -41,8 +41,8 @@ class About(commands.Cog):
             ctx (ctx): Mensaje
         """
         logger.debug("Ejecutando comando version")
-        embed = SimpleEmbed("HoyoStars", f"Actualmente estoy en la versión {__tag__} !", Color.magenta())
-        embed.add_field(name="GitHub", value="https://github.com/Hoshikuu/HoyoStars", inline=True)
+        embed = SimpleEmbed("Fairy", f"Actualmente estoy en la versión {__tag__} !", Color.magenta())
+        embed.add_field(name="GitHub", value="https://github.com/Hoshikuu/Fairy", inline=True)
         embed.set_footer(text="A futuro más y mejor.")
         await ctx.send(embed=embed)  
 

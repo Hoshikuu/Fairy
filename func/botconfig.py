@@ -1,7 +1,18 @@
+#                                                                    ---------------------------------
+#
+#                                                                       Script  creado por  Hoshiku
+#                                                                       https://github.com/Hoshikuu
+#
+#                                                                    ---------------------------------
+
+# botconfig.py - V2.0
+
 from discord.ext import commands
 
 from json import load, dump
 from os.path import isfile
+
+from func.database import select_db
 
 from func.logger import get_logger
 
@@ -9,6 +20,39 @@ from func.logger import get_logger
 configJson = None # Literalmente la cosa mas importante del bot sin esto explota
 
 logger = get_logger(__name__)
+
+def GetPrefix(bot, message):
+    """Obtener el prefix del servidor en la cual se esta enviando el mensaje a traves de la variable global
+
+    Args:
+        bot (bot): No se para que sirve en serio, algo para discord
+        message (ctx): Mensaje
+
+    Returns:
+        str: Devuelve el prefix del servidor del mensaje
+    """
+    
+    prefix = select_db(str(message.guild.id), "prefix", "config", "id", "1")
+    return prefix
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 def CheckFile():
     """Comprueba que el fichero de configuración este creado
@@ -51,20 +95,7 @@ def CheckSetUp(ctx):
         return True
     return False
 
-def GetPrefix(bot, message):
-    """Obtener el prefix del servidor en la cual se esta enviando el mensaje a traves de la variable global
 
-    Args:
-        bot (bot): No se para que sirve en serio, algo para discord
-        message (ctx): Mensaje
-
-    Returns:
-        str: Devuelve el prefix del servidor del mensaje
-    """
-    guildID = str(message.guild.id)
-    logger.debug(f"Recopilando prefix del servidor {guildID}")
-    prefix = configJson[guildID]["prefix"]
-    return prefix
 
 def IsSU():
     async def predicate(ctx):

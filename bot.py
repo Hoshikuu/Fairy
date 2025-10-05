@@ -5,6 +5,8 @@
 #
 #                                                                    ---------------------------------
 
+# bot.py - V2.0
+
 from discord import Intents
 from discord.ext import commands
 
@@ -12,71 +14,46 @@ from os import listdir, getenv
 from asyncio import run
 from dotenv import load_dotenv
 
-from func.botconfig import GetPrefix, ChargeConfig, configJson
+from func.botconfig import GetPrefix
 from func.logger import get_logger
-from func.starter import CheckDirs
 
-# TODO: Añadir embeds a los mensajes enviados de vuelta
-
-# Logger centralizado
 logger = get_logger(__name__)
-
-# Carga la configuración inicial
-ChargeConfig()
-logger.info("Configuración inicial cargada")
-
-# El bot obtiene todos los permisos disponibles
 bot = commands.Bot(command_prefix=GetPrefix, intents=Intents.all())
-logger.info("Permisos del bot establecidos.")
-
-# Obtener el token del bot
-def GetToken():
-    load_dotenv()
-    token = getenv("DISCORD_TOKEN")
-    logger.info("Token del bot obtenido")
-    return token
-
-# Carga los cogs del bot automáticamente
-async def ChargeCogs():
-    for cog in listdir("./cogs"):
-        if not cog.endswith(".py"): # Busca los archivos de python y los carga al bot
-            continue
-        try:
-            await bot.load_extension(f"cogs.{cog[:-3]}")
-            logger.info(f"{cog} cargado a los cogs")
-        except Exception as e:
-            logger.critical(f"{cog} cog no se pudo cargar, es posible que algunos comandos y funcionalidades dejen de funcionar: {e}")
-
-# Función principal para ejecutar el bot
-async def main():
-    async with bot:
-        await ChargeCogs()
-        logger.info("Todos los cogs cargados correctamente")
-        try:
-            await bot.start(GetToken())
-        except Exception as e:
-            logger.critical(f"El token del bot es invalido y ha fallado en iniciar el bot: {e}")
-            return
 
 @bot.event
 async def on_ready():
+    """Evento que se ejecuta cuando el bot se conecta a Discord
+    """
     try:
         synced = await bot.tree.sync()
         logger.info(f"Sincronizados {len(synced)} comandos")
     except Exception as e:
         logger.error(f"Error al sincronizar comandos: {e}")
-    
-    for guild in bot.guilds:
-        logger.debug(f"Conectado al servidor: {guild.name} con id: {guild.id}")
 
-    try:
-        CheckDirs()
-    except Exception as e:
-        logger.error("Error inesperado al crear directorios")
+    logger.info(" === FAIRY CONECTADO ===")
 
-    logger.info(" === BOT CONECTADO ===")
+async def main():
+    """Función principal para iniciar el bot de Discord
+    """
+    async with bot:
+        for cog in listdir("./cogs"):
+            if cog.endswith(".py"):
+                try:
+                    await bot.load_extension(f"cogs.{cog[:-3]}")
+                    logger.info(f"{cog} cargado a los cogs")
+                except Exception as e:
+                    logger.critical(f"{cog} cog no se pudo cargar, es posible que algunos comandos y funcionalidades dejen de funcionar: {e}")
+                
+        logger.info("Todos los cogs posibles han sido cargados")
+        
+        try:
+            load_dotenv()
+            await bot.start(getenv("DISCORD_TOKEN"))
+            logger.info("Recuperando token de entorno y arrancando el bot")
+        except Exception as e:
+            logger.critical(f"El bot no se ha podido iniciar, revise el token y vuelva a intentarlo: {e}")
+            exit(1)
 
-# Inicia el bot
 if __name__ == "__main__":
-    logger.info("Iniciando Bot HoyoStars")
+    logger.info("Iniciando Fairy ...")
     run(main())
