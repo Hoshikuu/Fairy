@@ -30,8 +30,6 @@ def create_global_db():
         "id"	TEXT NOT NULL UNIQUE,
         "token"	TEXT NOT NULL UNIQUE,
         "password"	TEXT NOT NULL,
-        "data"	TEXT NOT NULL,
-        "valid"	TEXT NOT NULL,
         PRIMARY KEY("id")
     );
     """)
@@ -58,7 +56,32 @@ def check_file(id: str = None):
         mkdir("database")
     
     create_global_db()
+
+def select_global_db(id: str):
+    """Selecciona datos de la base de datos global
+
+    Args:
+        id (str): Id del servidor
+
+    Returns:
+        tuple: Devuelve una tupla con los datos seleccionados, None si no se encuentra
+    """
     
+    check_file()
+    try:
+        conn = connect("database/global.db")
+        cursor = conn.cursor()
+        cursor.execute(
+        f"""
+        SELECT * FROM token WHERE id = ?
+        """, (id,))
+        data = cursor.fetchone()
+        conn.close()
+        return data
+    except Exception as e:
+        logger.error(f"Error inesperado al seleccionar datos de la base de datos global.db: {e}")
+        return None
+
 def get_global_db(token: str):
     """Consulta el token en la base de datos global
 
@@ -91,7 +114,7 @@ def get_global_db(token: str):
         logger.error(f"Error inesperado al conectar con la base de datos global.db: {e}")
         return None
         
-def insert_global_db(id: str, token: str):
+def insert_global_db(id: str, token: str, password: str):
     """Inserta un nuevo token en la base de datos global
 
     Args:
@@ -107,7 +130,7 @@ def insert_global_db(id: str, token: str):
         conn = connect("database/global.db")
         logger.debug("Conectado a la base de datos global.db")
         cursor = conn.cursor()
-        cursor.execute("INSERT INTO token (id, token) VALUES (?, ?)", (id, token))
+        cursor.execute("INSERT INTO token (id, token, password) VALUES (?, ?, ?)", (id, token, password))
         conn.commit()
         logger.info(f"Token insertado correctamente en la base de datos global.db")
         return True
@@ -115,7 +138,7 @@ def insert_global_db(id: str, token: str):
         logger.error(f"Error inesperado al insertar el token en la base de datos global.db: {e}")
         return False
     
-def update_global_db(id: str, token: str):
+def update_global_db(id: str, token: str, password: str):
     """Actualiza el token en la base de datos global
 
     Args:
@@ -130,7 +153,7 @@ def update_global_db(id: str, token: str):
         conn = connect("database/global.db")
         logger.debug("Conectado a la base de datos global.db")
         cursor = conn.cursor()
-        cursor.execute("UPDATE token SET token = ? WHERE id = ?", (token, id))
+        cursor.execute("UPDATE token SET token = ?, password = ? WHERE id = ?", (token, password, id))
         conn.commit()
         logger.info(f"Token actualizado correctamente en la base de datos global.db")
         return True

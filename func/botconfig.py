@@ -21,19 +21,17 @@ configJson = None # Literalmente la cosa mas importante del bot sin esto explota
 
 logger = get_logger(__name__)
 
-def GetPrefix(bot, message):
+def GetPrefix(bot, ctx: commands.context.Context):
     """Obtener el prefix del servidor en la cual se esta enviando el mensaje a traves de la variable global
 
     Args:
         bot (bot): No se para que sirve en serio, algo para discord
-        message (ctx): Mensaje
+        ctx (ctx): Mensaje
 
     Returns:
         str: Devuelve el prefix del servidor del mensaje
     """
-    
-    prefix = select_db(str(message.guild.id), "prefix", "config", "id", "1")
-    return prefix
+    return select_db(str(ctx.guild.id), "prefix", "config", "id", "1")[0]
 
 
 

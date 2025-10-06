@@ -21,8 +21,8 @@ def login():
             expiration = (datetime.now() + timedelta(seconds=30)).isoformat() # 1800 segundos = 30 minutos #! Importante usar esto para la base de datos xd
             bearers = session.get("bearers", [])
             bearers.append({"bearer": bearer, "expiration": expiration})
-            session["bearers"] = bearers  
-            return redirect(url_for("inicio", bearer=bearer, token=token))
+            session["bearers"] = bearers
+            return redirect(url_for("inicio", bearer=bearer, cid=db_info[0]))
     return redirect(url_for("fairy", error=True))
 
 @app.route("/inicio")
@@ -52,7 +52,7 @@ def inicio():
     session["bearers"] = valid_bearers
     
     token = request.args.get("token")
-    return render_template("inicio.html", token=request.args.get("token"))
+    return render_template("inicio.html", token=request.args.get("cid"))
 
 @app.route("/deny")
 def deny():
