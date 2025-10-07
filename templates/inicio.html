@@ -5,7 +5,51 @@
     <title>Fairy</title>
 </head>
 <body>
-    <h1>Configuracion</h1>
+    <h1>Fairy - Página de Inicio</h1>
+
+    <button onclick="mostrar('Básico')">Básico</button>
+    <button onclick="mostrar('Operadores')">Operadores</button>
+    <button onclick="mostrar('Ticket')">Ticket</button>
+
+    <hr>
+
+    <div id="Básico">
+        <h3>Básico</h3>
+        <p>prefix: </p>
+        <input type="text" name="prefix" value="{{ prefix }}">
+        <p>log: </p>
+        <input type="text" name="log" value="{{ log }}">
+    </div>
+
+    <div id="Operadores" style="display:none">
+        <h3>Operadores</h3>
+        <p>id: </p>
+        <input type="text" name="op_id" value="{{ op_id }}">
+        <p>name: </p>
+        <input type="text" name="op_name" value="{{ op_name }}">
+    </div>
+
+    <div id="Ticket" style="display:none">
+        <h3>Ticket</h3>
+        <p>general: </p>
+        <input type="text" name="general" value="{{ general }}">
+        <p>category: </p>
+        <input type="text" name="category" value="{{ category }}">
+        <p>member: </p>
+        <input type="text" name="member" value="{{ member }}">
+        <p>message: </p>
+        <input type="text" name="message" value="{{ message }}">
+    </div>
+
+    <script>
+        function mostrar(id) {
+            document.getElementById('Básico').style.display = 'none';
+            document.getElementById('Operadores').style.display = 'none';
+            document.getElementById('Ticket').style.display = 'none';
+            
+            document.getElementById(id).style.display = 'block';
+        }
+    </script>
     
     <p style="color: red;">{{ token }}</p>
 </body>

@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, redirect, url_for, session
-from func.database import get_global_db
+from func.database import get_global_db, update_global_db
 from datetime import datetime, timedelta
 from secrets import token_urlsafe
 
@@ -18,10 +18,12 @@ def login():
     if db_info is not None:
         if password == db_info[2]:
             bearer = token_urlsafe(32)
-            expiration = (datetime.now() + timedelta(seconds=30)).isoformat() # 1800 segundos = 30 minutos #! Importante usar esto para la base de datos xd
+            expiration = (datetime.now() + timedelta(seconds=1800)).isoformat() # 1800 segundos = 30 minutos #! Importante usar esto para la base de datos xd
             bearers = session.get("bearers", [])
             bearers.append({"bearer": bearer, "expiration": expiration})
             session["bearers"] = bearers
+            if not update_global_db(db_info[0], None, None):
+                raise Exception("Error al actualizar token y contraseña en la base de datos global")
             return redirect(url_for("inicio", bearer=bearer, cid=db_info[0]))
     return redirect(url_for("fairy", error=True))
 

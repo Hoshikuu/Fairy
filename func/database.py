@@ -28,8 +28,8 @@ def create_global_db():
     cursor.execute("""
     CREATE TABLE "token" (
         "id"	TEXT NOT NULL UNIQUE,
-        "token"	TEXT NOT NULL UNIQUE,
-        "password"	TEXT NOT NULL,
+        "token"	TEXT UNIQUE,
+        "password"	TEXT,
         PRIMARY KEY("id")
     );
     """)
@@ -138,7 +138,7 @@ def insert_global_db(id: str, token: str, password: str):
         logger.error(f"Error inesperado al insertar el token en la base de datos global.db: {e}")
         return False
     
-def update_global_db(id: str, token: str, password: str):
+def update_global_db(id: str, token, password):
     """Actualiza el token en la base de datos global
 
     Args:
@@ -160,7 +160,7 @@ def update_global_db(id: str, token: str, password: str):
     except Exception as e:
         logger.error(f"Error inesperado al actualizar el token en la base de datos global.db: {e}")
         return False
-    
+
 def create_db(id: str):
     """Crea la base de datos de configuración si no existe
 
