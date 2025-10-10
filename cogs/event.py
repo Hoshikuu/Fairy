@@ -14,7 +14,7 @@ from time import time
 
 from func.botconfig import configJson, GetPrefix
 from func.database import select_db, update_db, insert_db
-from models.views import VerificationView, VeriConfiView, ClosedTicketToolView
+#from models.views import VerificationView, VeriConfiView, ClosedTicketToolView
 from models.embeds import SimpleEmbed
 from func.logger import get_logger
 
@@ -34,9 +34,9 @@ class Event(commands.Cog):
     async def on_ready(self):
         # Recargar las views de mensajes ya enviados
         try:
-            self.bot.add_view(VerificationView())
-            self.bot.add_view(VeriConfiView())
-            self.bot.add_view(ClosedTicketToolView())
+            # self.bot.add_view(VerificationView())
+            # self.bot.add_view(VeriConfiView())
+            # self.bot.add_view(ClosedTicketToolView())
             logger.info("Views de event.py cargados correctamente")
         except Exception as e:
             logger.error(f"Error al cargar views antiguas de event.py: {e}")
@@ -66,9 +66,10 @@ class Event(commands.Cog):
         try:
             data = select_db(guild_id, "messages", "data", "id", user_id)
             
-            if data:
+            if data is not None:
                 logger.debug(f"Aumentando el contador de mensajes del usuario {user_id}")
-                if not update_db(guild_id, "data", "messages", data[0] + 1, "id", user_id):
+                #BUG: INT OBJECT IS NOT ITERABLE
+                if not update_db(guild_id, "data", ("messages"), (data[0] + 1), "id", user_id):
                     raise Exception(f"No se ha podido actualizar el contador de mensajes del usuario {user_id}")
             else:
                 logger.debug(f"Creando un nuevo registro para el usuario {user_id}")
@@ -107,7 +108,7 @@ class Event(commands.Cog):
                 
                 if data:
                     logger.debug(f"Actualizando el tiempo de chat de voz del usuario {user_id} un total de {session_hours} horas")
-                    if not update_db(guild_id, "data", "voicechat", data[0] + session_hours, "id", user_id):
+                    if not update_db(guild_id, "data", ("voicechat"), (data[0] + session_hours), "id", user_id):
                         raise Exception(f"No se ha podido actualizar el tiempo de chat de voz de usuario {user_id}")
                 else:
                     logger.debug(f"Creando un nuevo registro para el usuario {user_id}")
@@ -120,19 +121,19 @@ class Event(commands.Cog):
             logger.debug(f"Usuario {user_id} entro al canal de voz {after.channel.id} del servidor {guild_id}")
             self.voice_sessions[user_id] = time()
 
-    @commands.Cog.listener()
-    async def on_guild_channel_create(self, channel):
-        """Se ejecuta cuando se crea un canal nuevo
+    # @commands.Cog.listener()
+    # async def on_guild_channel_create(self, channel):
+    #     """Se ejecuta cuando se crea un canal nuevo
 
-        Args:
-            channel (Channel): Canal nuevo que se crea
-        """
-        #TODO: Modificar esto cuando se actualize la configuración de tickets
-        ticketConfigJson = configJson[str(channel.guild.id)]["ticket"]
-        if channel.category_id == ticketConfigJson["category"]:
-            if str(channel.name).split("-")[0] == ticketConfigJson["panels"]["verification"]["name"]:
-                embed = SimpleEmbed("Verificación", "Inicia el proceso para obtener la información para poder completar la verificación.", discord.Color.blurple())
-                await channel.send(f"<@{channel.topic}>", embed=embed, view=VerificationView())
+    #     Args:
+    #         channel (Channel): Canal nuevo que se crea
+    #     """
+    #     #TODO: Modificar esto cuando se actualize la configuración de tickets
+    #     ticketConfigJson = configJson[str(channel.guild.id)]["ticket"]
+    #     if channel.category_id == ticketConfigJson["category"]:
+    #         if str(channel.name).split("-")[0] == ticketConfigJson["panels"]["verification"]["name"]:
+    #             embed = SimpleEmbed("Verificación", "Inicia el proceso para obtener la información para poder completar la verificación.", discord.Color.blurple())
+    #             await channel.send(f"<@{channel.topic}>", embed=embed, view=VerificationView())
 
 async def setup(bot: commands.Bot):
     await bot.add_cog(Event(bot))

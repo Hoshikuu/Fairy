@@ -5,7 +5,7 @@ from json import dump
 
 from func.botconfig import configJson, ChargeConfig, CheckSetUp, IsSU
 from func.logger import get_logger
-from models.views import PanelView
+# from models.views import PanelView
 from models.embeds import SimpleEmbed
 
 logger = get_logger(__name__)
@@ -23,11 +23,11 @@ class Ticket(commands.Cog):
     async def on_ready(self):
         # Carga las views de los mensajes ya enviados
         try:
-            for guild in self.bot.guilds:
-                panels = configJson[str(guild.id)]["ticket"]["panels"]
-                for panelID, panelData in panels.items():
-                    view = PanelView(panelID, panelData)
-                    self.bot.add_view(view)
+            # for guild in self.bot.guilds:
+            #     panels = configJson[str(guild.id)]["ticket"]["panels"]
+            #     for panelID, panelData in panels.items():
+            #         view = PanelView(panelID, panelData)
+            #         self.bot.add_view(view)
             logger.info("Views de ticket.py cargados correctamente")
         except Exception as e:
             logger.error(f"Error inesperado al cargar views: {e}")
@@ -69,7 +69,7 @@ class Ticket(commands.Cog):
                 ChargeConfig()
         
             embed = SimpleEmbed(title, description, Color.dark_blue())
-            await message.edit(embed=embed, view=PanelView(id, panels[id]))
+            # await message.edit(embed=embed, view=PanelView(id, panels[id]))
         except Exception as e:
             logger.error(f"Error inesperado en crear el ticket {id}: {e}")
             

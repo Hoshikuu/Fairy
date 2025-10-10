@@ -13,10 +13,13 @@
 
     <hr>
 
+    <form action="/save" method="post">
+
+    <input type="hidden" name="cid" value="{{ cid }}">
     <div id="Básico">
         <h3>Básico</h3>
         <p>prefix: </p>
-        <input type="text" name="prefix" value="{{ prefix }}">
+        <input type="text" name="prefix" value="{{ prefix }}" required>
         <p>log: </p>
         <input type="text" name="log" value="{{ log }}">
     </div>
@@ -24,22 +27,25 @@
     <div id="Operadores" style="display:none">
         <h3>Operadores</h3>
         <p>id: </p>
-        <input type="text" name="op_id" value="{{ op_id }}">
+        <input type="text" name="op_id" value="{{ op_id }}" required>
         <p>name: </p>
-        <input type="text" name="op_name" value="{{ op_name }}">
+        <input type="text" name="op_name" value="{{ op_name }}" required>
     </div>
 
     <div id="Ticket" style="display:none">
         <h3>Ticket</h3>
         <p>general: </p>
-        <input type="text" name="general" value="{{ general }}">
+        <input type="text" name="general" value="{{ general }}" required>
         <p>category: </p>
-        <input type="text" name="category" value="{{ category }}">
+        <input type="text" name="category" value="{{ category }}" required>
         <p>member: </p>
-        <input type="text" name="member" value="{{ member }}">
+        <input type="text" name="member" value="{{ member }}" required>
         <p>message: </p>
-        <input type="text" name="message" value="{{ message }}">
+        <input type="text" name="message" value="{{ message }}" required>
     </div>
+    <button type="submit">Guardar</button>
+
+    </form>
 
     <script>
         function mostrar(id) {
@@ -51,6 +57,6 @@
         }
     </script>
     
-    <p style="color: red;">{{ token }}</p>
+    <p style="color: red;">{{ cid }}</p>
 </body>
 </html>

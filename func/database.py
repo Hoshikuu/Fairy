@@ -285,7 +285,7 @@ def insert_db(id: str, table: str, values: str, data: tuple):
         cursor.execute(
         f"""
         INSERT INTO {table} ({values}) VALUES ({','.join(['?' for _ in values.split(',')])})
-        """, data)
+        """, tuple(str(x) for x in data))
         conn.commit()
         conn.close()
         logger.info(f"Datos insertados correctamente en la base de datos {id}.db")
@@ -294,7 +294,7 @@ def insert_db(id: str, table: str, values: str, data: tuple):
         logger.error(f"Error inesperado al insertar datos en la base de datos {id}.db: {e}")
         return False
     
-def update_db(id: str, table: str, set_field: str, set_value: str, what: str, condition: str):
+def update_db(id: str, table: str, set_field: tuple, set_value: tuple, what: str, condition: str):
     """Actualiza datos en la base de datos
 
     Args:
@@ -313,9 +313,10 @@ def update_db(id: str, table: str, set_field: str, set_value: str, what: str, co
     try:
         conn = connect(f"database/{id}.db")
         cursor = conn.cursor()
+        print(",".join(f"{field}={value}" for field, value in zip(set_field, set_value)))
         cursor.execute(
         f"""
-        UPDATE {table} SET {set_field} = {set_value} WHERE {what} = {condition}
+        UPDATE {table} SET {",".join(f"{field}='{value}'" for field, value in zip(set_field, set_value))} WHERE {what} = {condition}
         """)
         conn.commit()
         conn.close()
