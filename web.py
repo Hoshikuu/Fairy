@@ -6,6 +6,24 @@ from secrets import token_urlsafe
 app = Flask(__name__)
 app.secret_key = "secretkey" # Cambiar por una clave segura en producción
 
+class Config:
+    def __init__(self, cid, config):
+        self.cid = cid
+        self.prefix = config[2]
+        self.log = config[3]
+        
+class Op:
+    def __init__(self, op):
+        self.op_id = op[0]
+        self.op_name = op[1]
+    
+class Ticket:
+    def __init__(self, ticket):
+        self.general = ticket[1]
+        self.category = ticket[2]
+        self.member = ticket[3]
+        self.message = ticket[4]
+
 @app.route("/")
 def fairy():
     return render_template("fairy.html", error=request.args.get("error"))
@@ -82,8 +100,12 @@ def inicio():
     
     session["bearers"] = valid_bearers
     
-    token = request.args.get("token")
-    return render_template("inicio.html", cid=request.args.get("cid"))
+    config = Config(request.args.get("cid"), select_db(request.args.get("cid"), "*", "config", "id", 1))
+    op = Op(select_db(request.args.get("cid"), "*", "op", "1", "1"))
+    ticket = Ticket(select_db(request.args.get("cid"), "*", "ticket", "id", 1))
+    ticket_op = select_db(request.args.get("cid"), "*", "ticket_op", "1", "1")
+    
+    return render_template("inicio.html", config=config, op=op, ticket=ticket)
 
 @app.route("/deny")
 def deny():

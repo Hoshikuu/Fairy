@@ -15,34 +15,36 @@
 
     <form action="/save" method="post">
 
-    <input type="hidden" name="cid" value="{{ cid }}">
+    <input type="hidden" name="cid" value="{{ config.cid }}">
     <div id="Básico">
         <h3>Básico</h3>
         <p>prefix: </p>
-        <input type="text" name="prefix" value="{{ prefix }}" required>
+        <input type="text" name="prefix" value="{{ config.prefix }}" required>
         <p>log: </p>
-        <input type="text" name="log" value="{{ log }}">
+        <input type="text" name="log" value="{{ config.log }}">
     </div>
 
     <div id="Operadores" style="display:none">
         <h3>Operadores</h3>
-        <p>id: </p>
-        <input type="text" name="op_id" value="{{ op_id }}" required>
-        <p>name: </p>
-        <input type="text" name="op_name" value="{{ op_name }}" required>
+        <div id="operadores-container">
+
+        </div>
+        <button type="button" onclick="addOperador()">Añadir Operador</button>
     </div>
 
     <div id="Ticket" style="display:none">
         <h3>Ticket</h3>
         <p>general: </p>
-        <input type="text" name="general" value="{{ general }}" required>
+        <input type="text" name="general" value="{{ ticket.general }}" required>
         <p>category: </p>
-        <input type="text" name="category" value="{{ category }}" required>
+        <input type="text" name="category" value="{{ ticket.category }}" required>
         <p>member: </p>
-        <input type="text" name="member" value="{{ member }}" required>
+        <input type="text" name="member" value="{{ ticket.member }}" required>
         <p>message: </p>
-        <input type="text" name="message" value="{{ message }}" required>
+        <input type="text" name="message" value="{{ ticket.message }}" required>
     </div>
+    
+    <hr>
     <button type="submit">Guardar</button>
 
     </form>
@@ -52,8 +54,37 @@
             document.getElementById('Básico').style.display = 'none';
             document.getElementById('Operadores').style.display = 'none';
             document.getElementById('Ticket').style.display = 'none';
-            
             document.getElementById(id).style.display = 'block';
+        }
+
+        const op_count = '{{ op.op_count }}';
+
+        function addOperador() {
+            const container = document.getElementById('operadores-container');
+            
+            const idLabel = document.createElement('p');
+            idLabel.textContent = 'id: ';
+            const idInput = document.createElement('input');
+            idInput.type = 'text';
+            idInput.name = 'op_id' + op_count;
+            // Cambiar esto a obtener los datos de flask en un json en vez de un valor asi por ejemplo
+            // Poder tener el json con una lista de los operadores, y comunicar entre el servidor flask y esto
+            // A traves de un JSON
+            idInput.value = '{{ op.op_id }}';
+            idInput.required = true;
+
+            const nameLabel = document.createElement('p');
+            nameLabel.textContent = 'name: ';
+            const nameInput = document.createElement('input');
+            nameInput.type = 'text';
+            nameInput.name = 'op_name' + op_count;
+            nameInput.value = '{{ op.op_name }}';
+            nameInput.required = true;
+
+            container.appendChild(idLabel);
+            container.appendChild(idInput);
+            container.appendChild(nameLabel);
+            container.appendChild(nameInput);
         }
     </script>
     
