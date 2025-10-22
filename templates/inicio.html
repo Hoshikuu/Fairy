@@ -26,10 +26,11 @@
 
     <div id="Operadores" style="display:none">
         <h3>Operadores</h3>
+        <input id="op-count" type="number" name="count" value=0 readonly>
+        <button type="button" onclick="addOperador()">Añadir Operador</button>
         <div id="operadores-container">
 
         </div>
-        <button type="button" onclick="addOperador()">Añadir Operador</button>
     </div>
 
     <div id="Ticket" style="display:none">
@@ -57,35 +58,38 @@
             document.getElementById(id).style.display = 'block';
         }
 
-        const op_count = '{{ op.op_count }}';
-
         function addOperador() {
             const container = document.getElementById('operadores-container');
+            const op_count = document.getElementById('op-count');
             
             const idLabel = document.createElement('p');
             idLabel.textContent = 'id: ';
             const idInput = document.createElement('input');
             idInput.type = 'text';
-            idInput.name = 'op_id' + op_count;
+            idInput.name = 'op_id' + op_count.value;
             // Cambiar esto a obtener los datos de flask en un json en vez de un valor asi por ejemplo
             // Poder tener el json con una lista de los operadores, y comunicar entre el servidor flask y esto
             // A traves de un JSON
-            idInput.value = '{{ op.op_id }}';
             idInput.required = true;
 
-            const nameLabel = document.createElement('p');
+            const nameLabel = document.createElement('p');µ
             nameLabel.textContent = 'name: ';
             const nameInput = document.createElement('input');
             nameInput.type = 'text';
-            nameInput.name = 'op_name' + op_count;
-            nameInput.value = '{{ op.op_name }}';
+            nameInput.name = 'op_name' + op_count.value;
             nameInput.required = true;
+
+            op_count.value = Number(op_count.value) + 1;
 
             container.appendChild(idLabel);
             container.appendChild(idInput);
             container.appendChild(nameLabel);
             container.appendChild(nameInput);
         }
+
+        window.onload = function() {
+            document.getElementById('op-count').value = 0;
+        };
     </script>
     
     <p style="color: red;">{{ cid }}</p>
