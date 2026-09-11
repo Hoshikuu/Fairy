@@ -50,7 +50,7 @@ class HADA:
             '--ctx-size', '16384',
             '--predict', '1024',
             '--threads', '6',
-            '--gpu-layers', '12',
+            '--gpu-layers', '8',
             '--temp', '0.7',
             '--top-p', '0.9',
             '--top-k', '40',

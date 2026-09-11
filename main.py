@@ -5,7 +5,7 @@
 
 from asyncio import run, sleep, create_task, get_event_loop, CancelledError
 from openai import OpenAI
-from hada import Hada, Stt, Mem
+from hada import HADA, Stt, Mem
 
 from hada.tts_init import speak
 
@@ -79,7 +79,7 @@ async def main():
     """Async main function
     """
     # Inicializa los módulos
-    hada = Hada(model="")
+    hada = HADA(model="")
     stt  = Stt()
     mem  = Mem()
 
