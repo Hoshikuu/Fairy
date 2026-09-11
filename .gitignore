@@ -1,33 +1,5 @@
-# --- Python environment ---
-.venv
+OLD
+
+llama
+models
 __pycache__
-
-# --- LLM models ---
-*.gguf
-
-# --- Mem files ---
-*.hada
-
-# --- Voices files ---
-*.onnx
-*.onnx.json
-HadaVoiceSample.wav
-speaker.pt
-
-# --- Tasks files ---
-tasks.json
-
-# --- Software ---
-llama.cpp/
-piper/
-
-# --- DEV TMP ---
-dev.*.tmp
-
-hubert_base.pt
-rmvpe.pt
-
-hada.index
-hada.pth
-
-logs/*.log
