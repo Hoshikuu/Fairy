@@ -1,5 +1,3 @@
-#TODO Primero de todo es ver si la otra alternativa es mejor ya que es mucho mas simple en comparacion con este
-
 #   ----------------------------------------------------
 #          Hoshikuu - https://github.com/Hoshikuu
 #   ----------------------------------------------------
