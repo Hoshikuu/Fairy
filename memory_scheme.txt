@@ -1,0 +1,74 @@
+Tabla:
+  Persona -> Tabla que contiene datos básicos sobre personas.
+    Campos:
+      persona_id -> primary key -> identificador único
+      nombre -> texto -> nombre de la persona
+      apellido -> texto nullable -> apellido si se conoce
+      apodo -> texto nullable -> nombre con el que HadaAI debería llamarla
+      fecha_primer_contacto -> fecha nullable -> primera vez que apareció
+      relacion_nivel -> (0 - 10) -> nivel de relación actual
+      gustos -> texto -> gustos resumidos en texto simple
+      disgustos -> texto -> disgustos resumidos en texto simple
+      hechos -> texto -> datos importantes sobre la persona en texto simple
+      created_at -> fecha/hora
+      updated_at -> fecha/hora
+    Acciones:
+      Leer persona -> pasar persona_id y devuelve los datos
+      Crear persona -> insertar una persona nueva
+      Actualizar persona -> modificar datos de la persona
+      Buscar persona -> buscar por nombre, apellido o apodo
+
+  Diary -> Tabla que almacena acontecimientos o entradas tipo diario.
+    Campos:
+      diary_id -> primary key -> identificador único
+      fecha -> fecha -> fecha principal del evento
+      redaccion -> texto -> versión detallada de lo ocurrido
+      resumen -> texto -> resumen corto del acontecimiento
+      categoria -> [extraño, raro, normal, divertido, especial]
+      sentimiento -> [furia, enojo, aburrimiento, sorpresa, locura, indiferencia, tristeza, amor, diversion, felicidad, nerviosismo, asco]
+      importancia -> (0 - 10) -> qué tan importante fue ese día o evento
+      created_at -> fecha/hora
+      updated_at -> fecha/hora
+    Acciones:
+      Leer diario -> pasar diary_id o fecha y devuelve los datos
+      Escribir diario -> crear entrada nueva
+      Actualizar diario -> modificar una entrada existente
+      Buscar diario -> buscar por fecha, categoría o texto
+
+  Memory -> Tabla principal de memoria persistente de HadaAI.
+    Campos:
+      memory_id -> primary key -> identificador único
+      tipo -> [persona, preferencia, hecho, evento, conversacion, recordatorio]
+      contenido -> texto -> memoria completa en texto natural
+      resumen -> texto -> resumen corto para recuperación rápida
+      persona_id -> foreign key nullable -> referencia a Persona si aplica
+      diary_id -> foreign key nullable -> referencia a Diary si aplica
+      importancia -> (0 - 10) -> prioridad de la memoria
+      confianza -> (0.0 - 1.0) -> qué tan fiable es la memoria
+      origen -> [usuario, inferido, sistema]
+      created_at -> fecha/hora
+      updated_at -> fecha/hora
+      last_accessed_at -> fecha/hora nullable
+    Acciones:
+      Leer memoria -> pasar memory_id y devuelve los datos
+      Crear memoria -> guardar nueva memoria
+      Actualizar memoria -> modificar contenido, resumen o importancia
+      Buscar memoria -> buscar por keyword, tipo, persona o fecha
+      Reforzar memoria -> aumentar importancia o actualizar acceso
+
+  MemoryLink -> Tabla para relacionar memorias entre sí.
+    Campos:
+      link_id -> primary key -> identificador único
+      memory_origen_id -> foreign key -> memoria origen
+      memory_destino_id -> foreign key -> memoria destino
+      tipo_relacion -> [related_to, caused_by, about_person, contradicts]
+      created_at -> fecha/hora
+    Acciones:
+      Vincular memorias -> crear una relación entre dos memorias
+      Ver relaciones -> listar conexiones de una memoria
+
+Relaciones:
+  Memory.persona_id -> Persona.persona_id
+  Memory.diary_id -> Diary.diary_id
+  MemoryLink.memory_origen_id -> Memory.memory_id
+  MemoryLink.memory_destino_id -> Memory.memory_id
