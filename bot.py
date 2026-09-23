@@ -47,6 +47,17 @@ async def on_message(message: discord.Message):
             response = await ask_req(msg)
 
         await message.channel.send(response)
+        return
+
+    if "fairy" in message.content.lower():
+        msg = message.content
+        print(f"User: {msg}")
+
+        async with message.channel.typing():
+            response = await ask_req(msg)
+
+        await message.channel.send(response)
+        return
 
     await bot.process_commands(message)
 

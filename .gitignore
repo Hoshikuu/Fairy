@@ -1,7 +1,10 @@
-OLD
+__OLD
 
 llama
 models
+whisper
+
 __pycache__
 
 .env
+mp4.mp3

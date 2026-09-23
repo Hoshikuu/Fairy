@@ -1,16 +1,16 @@
-"""Install a pinned llama.cpp release for Fairy.
+"""Install the pinned whisper.cpp b5130 release for Fairy.
 
-The release is intentionally fixed to b11115.  The installer detects the
-operating system, CPU architecture and the maximum CUDA version supported by
-the NVIDIA driver, then selects only assets that actually belong to b11115.
+The installer selects only real b5130 assets.  Use ``--backend cpu`` to keep
+Whisper off the GPU and leave VRAM available for llama.cpp.  Every selected
+archive is checked against the size and SHA-256 published by GitHub.
 
 Requirements:
     pip install requests tqdm
 
 Examples:
-    python llama_setup.py --dry-run
-    python llama_setup.py --backend auto
-    python llama_setup.py --backend cpu --yes
+    python whisper_setup.py --dry-run
+    python whisper_setup.py --backend cpu
+    python whisper_setup.py --backend auto --yes
 """
 
 from __future__ import annotations
@@ -19,6 +19,7 @@ import argparse
 import hashlib
 import platform
 import re
+import shlex
 import shutil
 import subprocess
 import tempfile
@@ -34,17 +35,19 @@ from tqdm import tqdm
 # CONFIGURATION
 # =========================================================
 
-REPO = "ggml-org/llama.cpp"
-RELEASE_TAG = "b11115"
+REPO = "ggml-org/whisper.cpp"
+RELEASE_TAG = "b5130"
 GITHUB_API = f"https://api.github.com/repos/{REPO}/releases/tags/{RELEASE_TAG}"
 DOWNLOAD_PREFIX = f"https://github.com/{REPO}/releases/download/{RELEASE_TAG}/"
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
-LLAMA_DIR = PROJECT_ROOT / "llama"
+WHISPER_DIR = PROJECT_ROOT / "whisper"
+MODELS_DIR = PROJECT_ROOT / "models"
+DEFAULT_MODEL = MODELS_DIR / "ggml-small.bin"
 
 HTTP_HEADERS = {
     "Accept": "application/vnd.github+json",
-    "User-Agent": "Fairy-llama-installer",
+    "User-Agent": "Fairy-whisper-installer",
 }
 
 
@@ -61,7 +64,7 @@ class SystemInfo:
 
 
 def get_arch() -> str:
-    """Return the CPU architecture using llama.cpp asset names."""
+    """Return the architecture using b5130 asset naming."""
 
     machine = platform.machine().lower()
     aliases = {
@@ -69,14 +72,14 @@ def get_arch() -> str:
         "x86_64": "x64",
         "arm64": "arm64",
         "aarch64": "arm64",
-        "s390x": "s390x",
+        "x86": "x86",
+        "i386": "x86",
+        "i686": "x86",
     }
     return aliases.get(machine, machine)
 
 
 def get_nvidia() -> tuple[str | None, str | None]:
-    """Return the first NVIDIA GPU name and driver-supported CUDA version."""
-
     if not shutil.which("nvidia-smi"):
         return None, None
 
@@ -86,7 +89,6 @@ def get_nvidia() -> tuple[str | None, str | None]:
             text=True,
             stderr=subprocess.DEVNULL,
         ).strip().splitlines()[0]
-
         outputs = []
         for command in (["nvidia-smi", "--version"], ["nvidia-smi"]):
             try:
@@ -110,7 +112,6 @@ def get_nvidia() -> tuple[str | None, str | None]:
             if match:
                 cuda = match.group(1)
                 break
-
         return gpu, cuda
     except (OSError, subprocess.CalledProcessError, IndexError):
         return None, None
@@ -118,12 +119,7 @@ def get_nvidia() -> tuple[str | None, str | None]:
 
 def get_system() -> SystemInfo:
     gpu, cuda = get_nvidia()
-    return SystemInfo(
-        os=platform.system().lower(),
-        arch=get_arch(),
-        gpu=gpu,
-        cuda=cuda,
-    )
+    return SystemInfo(platform.system().lower(), get_arch(), gpu, cuda)
 
 
 # =========================================================
@@ -131,12 +127,9 @@ def get_system() -> SystemInfo:
 # =========================================================
 
 def get_release() -> dict:
-    """Fetch and validate exactly the pinned release."""
-
     response = requests.get(GITHUB_API, headers=HTTP_HEADERS, timeout=20)
     response.raise_for_status()
     release = response.json()
-
     if release.get("tag_name") != RELEASE_TAG or release.get("draft"):
         raise RuntimeError(
             f"GitHub did not return the expected non-draft release {RELEASE_TAG}."
@@ -148,7 +141,6 @@ def asset_info(asset: dict) -> dict:
     url = asset["browser_download_url"]
     if not url.startswith(DOWNLOAD_PREFIX):
         raise RuntimeError(f"Unexpected asset URL outside {RELEASE_TAG}: {url}")
-
     digest = asset.get("digest") or ""
     sha256 = digest.removeprefix("sha256:") if digest.startswith("sha256:") else None
     return {
@@ -173,24 +165,13 @@ def version_tuple(version: str) -> tuple[int, int]:
     return int(match.group(1)), int(match.group(2) or 0)
 
 
-def find_cuda_build(
-    release: dict,
-    supported_cuda: str,
-    os_name: str,
-    arch: str,
-) -> dict | None:
-    """Select the newest b11115 CUDA package supported by the driver."""
-
-    platform_name = "win" if os_name == "windows" else "ubuntu"
-    extension = r"\.zip" if os_name == "windows" else r"\.tar\.gz"
+def find_windows_x64_cuda(release: dict, supported_cuda: str) -> dict | None:
     pattern = re.compile(
-        rf"^llama-{RELEASE_TAG}-bin-{platform_name}-cuda-"
-        rf"(\d+)\.(\d+)-{re.escape(arch)}{extension}$",
+        r"^whisper-cublas-(\d+)\.(\d+)(?:\.\d+)?-bin-x64\.zip$",
         re.IGNORECASE,
     )
     supported = version_tuple(supported_cuda)
     candidates: list[tuple[tuple[int, int], dict]] = []
-
     for asset in release.get("assets", []):
         match = pattern.match(asset["name"])
         if not match:
@@ -201,34 +182,14 @@ def find_cuda_build(
 
     if not candidates:
         return None
-
     version, asset = max(candidates, key=lambda item: item[0])
     info = asset_info(asset)
     info["cuda"] = f"{version[0]}.{version[1]}"
     return info
 
 
-def find_cuda_runtime(
-    release: dict,
-    cuda: str,
-    os_name: str,
-    arch: str,
-) -> dict | None:
-    platform_name = "win" if os_name == "windows" else "ubuntu"
-    extension = r"\.zip" if os_name == "windows" else r"\.tar\.gz"
-    pattern = re.compile(
-        rf"^cudart-llama(?:-{RELEASE_TAG})?-bin-{platform_name}-cuda-"
-        rf"{re.escape(cuda)}-{re.escape(arch)}{extension}$",
-        re.IGNORECASE,
-    )
-    for asset in release.get("assets", []):
-        if pattern.match(asset["name"]):
-            return asset_info(asset)
-    return None
-
-
 def select_build(system: SystemInfo, release: dict, preference: str) -> dict:
-    """Select a verified asset set for auto, CPU or CUDA mode."""
+    """Choose only combinations that b5130 actually publishes."""
 
     if preference == "cuda" and (not system.gpu or not system.cuda):
         raise RuntimeError(
@@ -236,60 +197,76 @@ def select_build(system: SystemInfo, release: dict, preference: str) -> dict:
             "and driver-supported CUDA version."
         )
 
-    if system.os in {"windows", "linux"}:
+    if system.os == "windows":
         if preference in {"auto", "cuda"} and system.gpu and system.cuda:
-            llama = find_cuda_build(
-                release, system.cuda, system.os, system.arch
-            )
-            if llama:
-                runtime = find_cuda_runtime(
-                    release, llama["cuda"], system.os, system.arch
+            cuda_asset = None
+            if system.arch == "x64":
+                cuda_asset = find_windows_x64_cuda(release, system.cuda)
+            elif system.arch == "arm64" and version_tuple(system.cuda) >= (13, 4):
+                cuda_asset = find_exact_asset(
+                    release, "whisper-bin-win-cuda-13.4-arm64.zip"
                 )
-                if runtime:
-                    return {
-                        "backend": "cuda",
-                        "cuda": llama["cuda"],
-                        "packages": [llama, runtime],
-                    }
+                if cuda_asset:
+                    cuda_asset["cuda"] = "13.4"
 
+            if cuda_asset:
+                return {
+                    "backend": "cuda",
+                    "cuda": cuda_asset["cuda"],
+                    "packages": [cuda_asset],
+                }
             if preference == "cuda":
                 raise RuntimeError(
-                    f"Release {RELEASE_TAG} has no complete CUDA build compatible "
-                    f"with {system.os} {system.arch} and CUDA {system.cuda}."
+                    f"Release {RELEASE_TAG} has no CUDA asset compatible with "
+                    f"Windows {system.arch} and CUDA {system.cuda}."
                 )
 
         if preference in {"auto", "cpu"}:
-            platform_name = "win-cpu" if system.os == "windows" else "ubuntu"
-            extension = ".zip" if system.os == "windows" else ".tar.gz"
-            filename = (
-                f"llama-{RELEASE_TAG}-bin-{platform_name}-{system.arch}{extension}"
-            )
-            llama = find_exact_asset(release, filename)
-            if llama:
+            cpu_assets = {
+                "x64": "whisper-bin-x64.zip",
+                "x86": "whisper-bin-Win32.zip",
+                "arm64": "whisper-bin-win-cpu-arm64.zip",
+            }
+            filename = cpu_assets.get(system.arch)
+            asset = find_exact_asset(release, filename) if filename else None
+            if asset:
                 notice = None
                 if preference == "auto" and system.gpu:
-                    notice = (
-                        "No compatible complete CUDA pair was published; using CPU."
-                    )
+                    notice = "No compatible CUDA asset was published; using CPU."
                 return {
                     "backend": "cpu",
-                    "packages": [llama],
+                    "packages": [asset],
                     "notice": notice,
                 }
 
-    elif system.os == "darwin":
+    elif system.os == "linux":
         if preference == "cuda":
-            raise RuntimeError("CUDA packages are not available for macOS.")
-        filename = f"llama-{RELEASE_TAG}-bin-macos-{system.arch}.tar.gz"
-        llama = find_exact_asset(release, filename)
-        if llama:
+            raise RuntimeError(
+                f"Release {RELEASE_TAG} publishes no Linux CUDA archive; use "
+                "--backend cpu or build whisper.cpp from source."
+            )
+        filename = f"whisper-bin-ubuntu-{system.arch}.tar.gz"
+        asset = find_exact_asset(release, filename)
+        if asset:
+            notice = None
+            if system.gpu:
+                notice = (
+                    f"Release {RELEASE_TAG} has no Linux CUDA asset; using CPU."
+                )
             return {
-                "backend": "metal" if system.arch == "arm64" else "cpu",
-                "packages": [llama],
+                "backend": "cpu",
+                "packages": [asset],
+                "notice": notice,
             }
 
+    elif system.os == "darwin":
+        raise RuntimeError(
+            f"Release {RELEASE_TAG} publishes an Apple XCFramework, but no macOS "
+            "whisper-server executable. Build from source on macOS."
+        )
+
     raise RuntimeError(
-        f"Release {RELEASE_TAG} has no compatible {preference} build for "
+        f"Release {RELEASE_TAG} has no compatible {preference} server build for "
         f"{system.os} {system.arch}."
     )
 
@@ -310,14 +287,12 @@ def archive_name(asset: dict, index: int) -> str:
 
 
 def download(asset: dict, destination: Path) -> None:
-    """Download an asset and verify its size and published SHA-256."""
-
     digest = hashlib.sha256()
     written = 0
     with requests.get(
         asset["url"],
         stream=True,
-        timeout=(20, 120),
+        timeout=(20, 180),
         headers=HTTP_HEADERS,
     ) as response:
         response.raise_for_status()
@@ -346,27 +321,42 @@ def download(asset: dict, destination: Path) -> None:
 
 
 def find_server(root: Path) -> Path | None:
-    names = {"llama-server", "llama-server.exe"}
+    names = {"whisper-server", "whisper-server.exe"}
     return next((path for path in root.rglob("*") if path.name in names), None)
 
 
 def replace_installation(staged: Path) -> None:
-    backup = PROJECT_ROOT / f".llama-backup-{uuid.uuid4().hex}"
-    had_existing = LLAMA_DIR.exists()
+    backup = PROJECT_ROOT / f".whisper-backup-{uuid.uuid4().hex}"
+    had_existing = WHISPER_DIR.exists()
     if had_existing:
-        LLAMA_DIR.rename(backup)
+        WHISPER_DIR.rename(backup)
 
     try:
-        shutil.move(str(staged), str(LLAMA_DIR))
+        shutil.move(str(staged), str(WHISPER_DIR))
     except Exception:
-        if LLAMA_DIR.exists():
-            shutil.rmtree(LLAMA_DIR)
+        if WHISPER_DIR.exists():
+            shutil.rmtree(WHISPER_DIR)
         if had_existing and backup.exists():
-            backup.rename(LLAMA_DIR)
+            backup.rename(WHISPER_DIR)
         raise
     else:
         if backup.exists():
             shutil.rmtree(backup)
+
+
+def command_line(server: Path, model: Path) -> str:
+    args = [
+        str(server),
+        "--host",
+        "127.0.0.1",
+        "--port",
+        "8080",
+        "--model",
+        str(model),
+    ]
+    if platform.system().lower() == "windows":
+        return subprocess.list2cmdline(args)
+    return shlex.join(args)
 
 
 def install(build: dict, assume_yes: bool) -> bool:
@@ -381,7 +371,7 @@ def install(build: dict, assume_yes: bool) -> bool:
             return False
 
     PROJECT_ROOT.mkdir(parents=True, exist_ok=True)
-    with tempfile.TemporaryDirectory(prefix="fairy_llama_") as temp:
+    with tempfile.TemporaryDirectory(prefix="fairy_whisper_") as temp:
         temp_dir = Path(temp)
         staged = temp_dir / "install"
         staged.mkdir()
@@ -398,13 +388,22 @@ def install(build: dict, assume_yes: bool) -> bool:
             shutil.unpack_archive(archive, staged)
 
         if not find_server(staged):
-            raise RuntimeError("The selected archives do not contain llama-server.")
+            raise RuntimeError("The selected archive does not contain whisper-server.")
         replace_installation(staged)
 
-    server = find_server(LLAMA_DIR)
-    print(f"\nllama.cpp {RELEASE_TAG} installed successfully.")
-    print(f"Installation directory: {LLAMA_DIR}")
+    server = find_server(WHISPER_DIR)
+    print(f"\nwhisper.cpp {RELEASE_TAG} installed successfully.")
+    print(f"Installation directory: {WHISPER_DIR}")
     print(f"Server executable:      {server}")
+    if DEFAULT_MODEL.exists():
+        print("\nLocal-only HTTP server command:")
+        print(f"  {command_line(server, DEFAULT_MODEL)}")
+        print("Endpoint: http://127.0.0.1:8080/inference")
+    else:
+        print(
+            f"\nModel not found at {DEFAULT_MODEL}. Run model_setup.py first, "
+            "then start whisper-server with --model pointing to a GGML model."
+        )
     return True
 
 
@@ -441,7 +440,7 @@ def parse_args() -> argparse.Namespace:
         "--backend",
         choices=("auto", "cpu", "cuda"),
         default="auto",
-        help="Backend preference (default: auto).",
+        help="Use CPU to save VRAM, CUDA for NVIDIA, or auto (default).",
     )
     parser.add_argument("--yes", action="store_true", help="Skip confirmation.")
     parser.add_argument(
@@ -454,8 +453,8 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> int:
     args = parse_args()
-    print(f"Fairy llama.cpp Installer ({RELEASE_TAG})")
-    print("=====================================")
+    print(f"Fairy whisper.cpp Installer ({RELEASE_TAG})")
+    print("=======================================")
     try:
         system = get_system()
         print_system(system)
