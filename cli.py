@@ -1,9 +1,12 @@
 from openai import AsyncOpenAI
 from tool.read_system import system_prompt
+import asyncio
 
 client = AsyncOpenAI(
     base_url="http://127.0.0.1:8080/v1",
-    api_key="no-key"
+    api_key="no-key",
+    timeout=60,
+    max_retries=0,
 )
 
 MESSAGES = [
@@ -13,31 +16,32 @@ MESSAGES = [
     }
 ]
 
-async def ask_req(message: str):
+request_lock = asyncio.Lock()
 
-    MESSAGES.append(
-        {
-            "role": "user",
-            "content": message
-        }
-    )
 
-    response = await client.chat.completions.create(
-        model="local-model",
-        messages=MESSAGES,
-        extra_body={"chat_template_kwargs": {"enable_thinking": False}}
-    )
+def new_history():
+    return [{"role": "system", "content": system_prompt()}]
 
-    response_message = response.choices[0].message
 
-    content = response_message.content or ""
+async def ask_req(message: str, *, history=None):
+    """Send an OpenAI-compatible chat request to the local llama-server."""
+    history = MESSAGES if history is None else history
+    async with request_lock:
+        user_message = {"role": "user", "content": message}
 
-    MESSAGES.append(
-        {
-            "role": "assistant",
-            "content": content
-        }
-    )
+        response = await client.chat.completions.create(
+            model="Hoshiku/HadaAI",
+            messages=[*history, user_message],
+            extra_body={"chat_template_kwargs": {"enable_thinking": False}}
+        )
+
+        response_message = response.choices[0].message
+
+        content = response_message.content or ""
+
+        # Commit only completed turns, so failed/cancelled requests do not
+        # leave an unanswered user message in the conversation.
+        history.extend([user_message, {"role": "assistant", "content": content}])
 
     reasoning = getattr(
         response_message,

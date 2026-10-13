@@ -8,18 +8,51 @@ The WAV must contain mono, 16 kHz, 16-bit PCM audio.
 from __future__ import annotations
 
 import argparse
+import io
 import json
 import urllib.request
 import uuid
 import wave
 from pathlib import Path
 
+import httpx
+
+
+async def transcribe_pcm(
+    pcm: bytes,
+    *,
+    server_url: str = "http://127.0.0.1:8081",
+    language: str = "en",
+) -> str:
+    """Transcribe mono 16 kHz, signed 16-bit PCM without keeping audio files."""
+    if not pcm or len(pcm) % 2:
+        raise ValueError("Expected non-empty, 16-bit PCM audio")
+    if len(pcm) > 25 * 1024 * 1024:
+        raise ValueError("Audio is larger than the 25 MiB client limit")
+    wav_data = io.BytesIO()
+    with wave.open(wav_data, "wb") as wav:
+        wav.setnchannels(1)
+        wav.setsampwidth(2)
+        wav.setframerate(16000)
+        wav.writeframes(pcm)
+    async with httpx.AsyncClient(timeout=httpx.Timeout(60, connect=3), trust_env=False) as client:
+        response = await client.post(
+            server_url.rstrip("/") + "/inference",
+            data={"response_format": "json", "language": language},
+            files={"file": ("audio.wav", wav_data.getvalue(), "audio/wav")},
+        )
+        response.raise_for_status()
+        result = response.json()
+    if not isinstance(result.get("text"), str):
+        raise RuntimeError("Whisper returned no transcription")
+    return result["text"].strip()
+
 
 def transcribe_wav(
     path: str | Path,
     *,
     server_url: str = "http://127.0.0.1:8081",
-    language: str = "auto",
+    language: str = "en",
 ) -> str:
     audio = Path(path)
     with wave.open(str(audio), "rb") as wav:
@@ -63,7 +96,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("wav", type=Path)
     parser.add_argument("--url", default="http://127.0.0.1:8081")
-    parser.add_argument("--language", default="auto")
+    parser.add_argument("--language", default="en")
     args = parser.parse_args()
     print(transcribe_wav(args.wav, server_url=args.url, language=args.language))
 
