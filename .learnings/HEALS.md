@@ -38,3 +38,17 @@ en un canal real.
 - Pattern-Key: voice.missing_tts_output_transport
 - Recurrence-Count: 1
 - First-Seen / Last-Seen: 2026-10-14
+
+## Registros verificados — 2026-10-15
+
+Las rutas de la entrada anterior son históricas; los comandos actuales están
+en README y docs/RUNBOOK.md. No se ha verificado una llamada audible en Discord.
+
+- [HEAL-20261015-001](heals/HEAL-20261015-001.md): entrada única y migración.
+  Pattern-Key: runtime.single_entry_migration. Status: verified.
+- [HEAL-20261015-002](heals/HEAL-20261015-002.md): requisitos y entornos.
+  Pattern-Key: dependencies.direct_requirements_validation. Status: verified.
+- [HEAL-20261015-003](heals/HEAL-20261015-003.md): stdin heredado y cierre.
+  Pattern-Key: processes.inherited_control_stdin. Status: verified.
+- [HEAL-20261015-004](heals/HEAL-20261015-004.md): readiness en Windows.
+  Pattern-Key: processes.readiness_windows_redirector. Status: verified.

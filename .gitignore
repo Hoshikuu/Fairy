@@ -1,11 +1,10 @@
-__OLD
-
 llama
 models
 whisper
 
 __pycache__
+
+.venv/
 .venv-kokoro/
 
 .env
-mp4.mp3

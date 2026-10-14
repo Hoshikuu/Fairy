@@ -4,5 +4,9 @@ misaki[en]==0.9.4
 fastapi>=0.115,<1
 uvicorn>=0.34,<1
 soundfile>=0.13,<1
+pydantic>=2.9,<3
+numpy>=1.26,<3
+torch>=2.6,<3
+huggingface-hub>=0.36,<1
 # Kokoro 0.9.4 was built against the Transformers 4 API.
 transformers>=4.48,<5

@@ -1,152 +1,148 @@
 # Fairy
 
-Execute `python setup.py` to install llama, Whisper, their models, and Kokoro.
+Bot de Discord con Whisper, llama.cpp y Kokoro locales. Referencia: Python 3.12.
+La aplicación valida Python 3.11–3.12 por `asyncio.timeout` y Kokoro 0.9.4.
 
-## Servicio Kokoro TTS
+## Instalación
 
-Kokoro se ejecuta en un proceso y entorno propios (`.venv-kokoro`), separados
-del bot y de sus dependencias. Necesita Python 3.10–3.13; se recomienda 3.12.
-Si ya tienes instalados Whisper y llama, instala solamente Kokoro:
-
-```powershell
-python setup/kokoro_setup.py
-```
-
-El instalador descarga PyTorch para CPU, las dependencias de
-`requirements-kokoro.txt`, el modelo de inglés de spaCy, Kokoro-82M y la voz
-`af_heart`. Los pesos quedan en `models/kokoro` (o en `HF_HOME` si lo defines).
-La primera instalación necesita Internet. Después se reutiliza la caché.
-
-El arranque habitual inicia los tres servicios y espera sus comprobaciones
-`/health`. Un fallo de arranque o la salida de un servicio detiene los demás;
-`Ctrl+C` o `q` + Enter los cierra juntos:
+Desde la raíz, con un Python operativo:
 
 ```powershell
-python llama_start.py
+python setup.py --yes
+python setup.py --check --verify-models
 ```
 
-| Servicio | Puerto predeterminado | Endpoint |
+Setup prepara `.venv` para el bot y `.venv-kokoro` para TTS. Instala los
+requisitos correspondientes, descarga componentes que falten y comprueba
+dependencias, binarios, modelos y puertos. Los binarios existentes se conservan
+salvo `--force`. `--verify-models` verifica SHA-256 del catálogo GGUF/GGML.
+
+```powershell
+python setup.py --only bot
+python setup.py --only kokoro --kokoro-voice af_heart
+python setup.py --only whisper --backend cpu --yes
+python setup.py --check
+python setup.py --check --only kokoro --warmup
+```
+
+`--warmup` carga Kokoro y sintetiza una frase; puede descargar pesos o una voz
+que falten en caché. No combines los archivos de requisitos de ambos entornos.
+
+## Un único arranque
+
+Define `TOKEN` en `.env` y ejecuta:
+
+```powershell
+python main.py
+```
+
+El padre lanza `fairy.start`, espera a que los tres servicios estén listos y
+después lanza `fairy.bot`. Sus entradas están en `fairy/start.py` y `fairy/bot.py`.
+El supervisor utiliza `.venv-kokoro`; el bot utiliza `.venv`.
+
+`q` + Enter o `Ctrl+C` solicita cierre conjunto. Primero cierra Discord y después
+los servicios. Si un proceso termina inesperadamente, cierra el resto con
+esperas limitadas y terminación de respaldo.
+
+```powershell
+python main.py --check
+python main.py --kokoro-port 9082 --kokoro-voice bf_emma
+python main.py --bot-python ./.venv/Scripts/python.exe
+```
+
+`--check` comprueba configuración, paquetes, Opus, binarios y puertos sin login.
+El padre propaga las URL/puertos y voz al bot. `--startup-timeout` debe ser
+finito y positivo; su valor predeterminado es 360 segundos.
+
+## Entradas independientes
+
+Para diagnóstico de un componente:
+
+```powershell
+python -m fairy.start
+./.venv/Scripts/python.exe -m fairy.bot
+./.venv/Scripts/python.exe -m fairy.bot --check
+./.venv-kokoro/Scripts/python.exe -m fairy.services.kokoro
+```
+
+También se admiten `python fairy/start.py` y `python fairy/bot.py`.
+Para uso normal utiliza `main.py`.
+
+El cliente WAV anterior ahora se ejecuta como
+`python -m fairy.clients.whisper_cli audio.wav` (mono PCM16/16 kHz).
+
+## Estructura
+
+```text
+main.py                   Arranque conjunto
+setup.py                  Instalación y comprobaciones
+fairy/
+  start.py, bot.py         Entradas de servicios y Discord
+  runtime/                Orquestación, entornos y cierre
+  config/                 Rutas, entorno y prompt
+  clients/                HTTP
+  audio/                  PCM, buffers y reproducción
+  voice/                  Sesiones y trabajadores
+  discord_bot/            Eventos, comandos y permisos
+  services/               Supervisor y API/motor Kokoro
+  installers/             Instalación y utilidades comunes
+  diagnostics/            Comprobación real de la pipeline
+prompt/system.txt         Prompt
+docs/                     Operación y verificación
+.learnings/               Registros HEAL
+```
+
+Se eliminaron `scripts/`, `tests/`, `setup/` y `tool/`. No hay adaptadores en
+esas rutas. El código de aplicación importa desde `fairy/`.
+
+## Servicios y voz
+
+| Servicio | Puerto | Endpoint |
 | --- | --- | --- |
 | llama | 8080 | `/v1/chat/completions` |
 | Whisper | 8081 | `/inference` |
 | Kokoro | 8082 | `/v1/audio/speech` |
 
-Kokoro carga el modelo una sola vez y sintetiza una frase de calentamiento antes
-de aceptar peticiones. Se ejecuta en CPU con cuatro hilos por defecto para
-reservar la GPU a llama. Configuración opcional:
+`/join` conecta al canal del usuario. Whisper transcribe en inglés por usuario,
+llama responde y Kokoro reproduce la respuesta. Las transcripciones aparecen
+por texto y las respuestas de voz se reproducen en orden. `/leave` cancela
+síntesis/audio y desconecta. `/ask` y las menciones siguen respondiendo por texto.
 
-```powershell
-python llama_start.py --kokoro-port 8082 --kokoro-voice af_heart --kokoro-threads 4
-python llama_start.py --check
-```
+Se necesitan Conectar/Hablar, permiso para enviar transcripciones y que el bot
+no esté silenciado por el servidor. Los canales Stage no están soportados.
+Kokoro usa CPU, cuatro hilos y `af_heart` por defecto.
 
-Puedes elegir voces inglesas americanas (`af_heart`, `am_adam`, etc.) o británicas
-(`bf_emma`, etc.) con `--kokoro-voice`. Una voz diferente se descarga al iniciar
-por primera vez. `--kokoro-python` permite usar otro entorno preparado.
-`--kokoro-device cuda` requiere instalar una versión de PyTorch con CUDA en ese
-entorno; el instalador suministra la versión CPU.
+Su API acepta `model: kokoro`, `input`, `voice` opcional, `speed` de 0.5 a 2.0 y
+`response_format: wav`. Devuelve WAV PCM16 mono/24 kHz. Documentación en
+`http://127.0.0.1:8082/docs`.
 
-También puedes ejecutar solamente el TTS:
-
-```powershell
-.\.venv-kokoro\Scripts\python.exe kokoro_server.py
-```
-
-El endpoint recibe JSON con los campos habituales del formato de voz OpenAI y
-devuelve un WAV PCM de 16 bits, mono, a 24 kHz. En esta versión acepta únicamente
-`model: kokoro`, `response_format: wav` y la voz configurada al arrancar.
-`input` admite de 1 a 4000 caracteres y `speed` de 0.5 a 2.0.
-Hay una síntesis simultánea y hasta dos peticiones esperando; el exceso recibe
-HTTP 503. La documentación interactiva está en `http://127.0.0.1:8082/docs`.
-
-Prueba desde otra terminal:
-
-```powershell
-$speechBody = @{
-    model = 'kokoro'
-    input = 'Hello! I am Fairy.'
-    voice = 'af_heart'
-    speed = 1.0
-    response_format = 'wav'
-} | ConvertTo-Json
-Invoke-WebRequest -Uri 'http://127.0.0.1:8082/v1/audio/speech' `
-    -Method Post -ContentType 'application/json' -Body $speechBody -OutFile 'speech.wav'
-```
-
-Las respuestas generadas a partir de voz se envían a Kokoro y se reproducen en
-el mismo canal de Discord. El bot convierte el WAV mono de 24 kHz a PCM estéreo
-de 48 kHz en memoria, sin FFmpeg. Una cola de hasta ocho respuestas impide que
-se solapen y permite que Whisper siga transcribiendo mientras Fairy habla.
-Las respuestas largas se dividen en fragmentos de hasta 1000 caracteres.
-
-## Voice transcription
-
-Install the bot dependencies with `python -m pip install -r requirements.txt`.
-The voice receiver uses a pinned DAVE-compatible fork of `discord-ext-voice-recv`
-and `discord.py` 2.7. Do not install the original receiver alongside the fork.
-
-Start the local Whisper server with the multilingual model (the default port
-8081 avoids conflicting with llama-server on port 8080):
-
-```powershell
-python llama_start.py
-```
-
-Leave all three services running, then start the bot in a second terminal:
-
-```powershell
-python bot.py
-```
-
-Run `/join` in a server while you are in a voice channel. Fairy listens to all
-human users in that channel and posts each transcription, identified by speaker,
-in the text channel where `/join` was run. Audio from overlapping speakers is
-kept separate. A phrase is sent to Whisper after 0.8 seconds of silence; continuous
-speech is split into chunks of up to 15 seconds. The bot needs permission to
-connect and speak in voice, and send messages in the selected text channel.
-The bot must not be server-muted. Stage channels are not supported.
-
-Use `/leave` from the same voice channel to stop transcription and disconnect.
-The final buffered phrases are processed during shutdown (up to 10 seconds).
-Audio is processed in memory, without saving recordings. Transcription runs
-asynchronously; a bounded queue reports lost fragments if Whisper falls behind.
-The bot also reports server and reception errors in the text channel.
-
-Optional `.env` settings:
+Configuración para ejecución independiente:
 
 ```dotenv
+TOKEN=tu_token_de_discord
+LLAMA_URL=http://127.0.0.1:8080/v1
 WHISPER_URL=http://127.0.0.1:8081
 KOKORO_URL=http://127.0.0.1:8082
-# Optional: if set, this must match --kokoro-voice in llama_start.py.
-# KOKORO_VOICE=af_heart
 KOKORO_SPEED=1.0
+# Opcional; debe coincidir con la voz del servicio:
+# KOKORO_VOICE=af_heart
 ```
 
-The bot always transcribes English (`en`), without automatic language detection.
-Every non-empty transcription is also sent to the local llama-server at
-`http://127.0.0.1:8080/v1/chat/completions`, using the OpenAI chat format:
-`model`, `messages` with `system`/`user`/`assistant` roles, and the existing
-`chat_template_kwargs` configuration. Start llama-server (for example with
-`python llama_start.py`) before starting the bot.
+## Verificación
 
-Fairy speaks the model's response in the voice channel using Kokoro. Text commands
-(`/ask` and mentions) continue to receive text replies.
-Voice conversation history is separate for each speaker and voice session, with
-the last 20 exchanges retained. Whisper and llama requests have separate bounded
-queues so model generation does not block audio transcription. Kokoro synthesis
-and playback use their own queue. Model errors and
-queue overload are reported in the text channel. `/leave` allows up to 10 seconds
-to finish pending transcription work before cancellation. Playback, pending
-speech and in-flight TTS requests are cancelled immediately on `/leave`.
+```powershell
+python -m compileall -q fairy main.py setup.py
+git diff --check
+python main.py --check
+python setup.py --check --verify-models
+./.venv/Scripts/python.exe -m pip check
+./.venv-kokoro/Scripts/python.exe -m pip check
+./.venv/Scripts/python.exe -u -m fairy.diagnostics.voice_pipeline
+```
 
-### Si Fairy no habla
+El último comando prueba modelos reales hasta Opus en puertos temporales y
+cierra los servicios. No se conecta a Discord. La suite permanente de `tests/`
+se eliminó según la reorganización solicitada.
 
-1. Reinicia el bot después de actualizar el código y usa `/join` de nuevo.
-2. Ejecuta `llama_start.py` y espera el mensaje de que los tres servicios están listos.
-3. Consulta `http://127.0.0.1:8082/health`: debe indicar `status: ok` y `model: kokoro`.
-4. Si cambias `--kokoro-port`, cambia también `KOKORO_URL` en el `.env` del bot.
-   Si defines `KOKORO_VOICE`, debe coincidir con la voz del servicio; si lo omites,
-   se utiliza automáticamente la voz configurada en el servicio.
-5. Comprueba los permisos Conectar/Hablar y que el bot no esté silenciado por el servidor.
-6. Los fallos de síntesis o reproducción aparecen en el canal de texto y con
-   detalles en la consola del bot. Una cola llena se informa en el canal.
+Consulta `ARCHITECTURE.md`, `docs/RUNBOOK.md` y `docs/VERIFICATION.md`.
+La comprobación audible en una llamada real sigue pendiente.
