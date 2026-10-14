@@ -109,14 +109,15 @@ class TranscriptionTests(unittest.IsolatedAsyncioTestCase):
             for _ in range(10):
                 session.sink.write(speaker(123), frame())
             await session.stop()
-        self.assertEqual(channel.send.await_count, 2)
+        self.assertEqual(channel.send.await_count, 1)
         llama.assert_awaited_once()
         self.assertEqual(llama.call_args.args[0], "Hello @everyone")
-        self.assertIn("Fairy", channel.send.call_args.args[0])
         self.assertIn("<@123>", channel.send.call_args.args[0])
         mentions = channel.send.call_args.kwargs["allowed_mentions"].to_dict()
         self.assertEqual(mentions["parse"], [])
         self.assertFalse(session.tasks)
+        self.assertIsNone(session.speech_task)
+        self.assertTrue(session.speech_queue.empty())
 
     async def test_voice_llama_histories_are_separate_for_each_speaker(self):
         channel = SimpleNamespace(send=AsyncMock())
@@ -138,7 +139,8 @@ class TranscriptionTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(len(calls[1][1]), 1)  # Bob starts with only the system prompt.
         self.assertEqual(calls[2][1][1]["content"], "My name is Alice")
         self.assertNotIn("My name is Bob", str(calls[2][1]))
-        self.assertEqual(channel.send.await_count, 3)
+        self.assertEqual(channel.send.await_count, 0)
+        self.assertEqual(session.speech_queue.qsize(), 3)
         session.sink.cleanup()
 
     async def test_llama_failure_is_reported_and_next_phrase_is_processed(self):
@@ -154,9 +156,9 @@ class TranscriptionTests(unittest.IsolatedAsyncioTestCase):
         )):
             with self.assertLogs("voice_transcription", level="ERROR"):
                 await session._llm_loop()
-        self.assertEqual(channel.send.await_count, 2)
+        self.assertEqual(channel.send.await_count, 1)
         self.assertIn("llama-server", channel.send.call_args_list[0].args[0])
-        self.assertIn("Second answer", channel.send.call_args.args[0])
+        self.assertEqual(session.speech_queue.get_nowait(), (2, "Second answer"))
         session.sink.cleanup()
 
     async def test_whisper_failure_is_reported_and_worker_survives(self):

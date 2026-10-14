@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import argparse
 import os
+import re
 import signal
 import socket
 import subprocess
@@ -131,7 +132,7 @@ def stop_children(children: dict[str, subprocess.Popen[str]]) -> None:
 
 
 def listen_for_quit(stop_event: threading.Event) -> None:
-    if not sys.stdin.isatty():
+    if sys.stdin is None:
         return
     while not stop_event.is_set():
         line = sys.stdin.readline()
@@ -149,6 +150,8 @@ def main() -> int:
     try:
         if len({args.llama_port, args.whisper_port, args.kokoro_port}) != 3:
             raise RuntimeError("llama.cpp, whisper.cpp and Kokoro need different ports")
+        if args.kokoro_threads < 1 or not re.fullmatch(r"[ab][fm]_[a-z]+", args.kokoro_voice):
+            raise RuntimeError("Kokoro requires positive threads and an English voice such as af_heart")
         require_file(LLAMA_SERVER, "llama-server")
         require_file(WHISPER_SERVER, "whisper-server")
         require_file(args.llama_model, "LLM model")

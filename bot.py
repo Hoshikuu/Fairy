@@ -9,6 +9,8 @@ from dotenv import load_dotenv
 
 from cli import ask_req
 from voice_transcription import VoiceTranscription
+from kokoro_client import check_kokoro
+import httpx
 
 
 load_dotenv()
@@ -16,6 +18,11 @@ load_dotenv()
 TOKEN = os.getenv("TOKEN")
 WHISPER_URL = os.getenv("WHISPER_URL", "http://127.0.0.1:8081")
 WHISPER_LANGUAGE = "en"
+KOKORO_URL = os.getenv("KOKORO_URL", "http://127.0.0.1:8082")
+KOKORO_VOICE = os.getenv("KOKORO_VOICE") or None
+KOKORO_SPEED = float(os.getenv("KOKORO_SPEED", "1.0"))
+if not 0.5 <= KOKORO_SPEED <= 2.0:
+    raise ValueError("KOKORO_SPEED must be between 0.5 and 2.0")
 voice_sessions: dict[int, VoiceTranscription] = {}
 voice_locks: dict[int, asyncio.Lock] = {}
 whisper_lock = asyncio.Lock()
@@ -116,7 +123,7 @@ async def ask(
 
 @bot.tree.command(
     name="join",
-    description="Join your voice channel and transcribe users with Whisper"
+    description="Join your voice channel and answer with Kokoro"
 )
 @app_commands.guild_only()
 async def join(interaction: discord.Interaction):
@@ -128,12 +135,28 @@ async def join(interaction: discord.Interaction):
         return
 
     channel = member.voice.channel
+    if isinstance(channel, discord.StageChannel):
+        await interaction.response.send_message(
+            "Usa un canal de voz normal para conversar conmigo.", ephemeral=True
+        )
+        return
     guild = interaction.guild
     me = guild.me
     permissions = channel.permissions_for(me)
     if not permissions.connect:
         await interaction.response.send_message(
             "Necesito permiso para conectarme a ese canal.", ephemeral=True
+        )
+        return
+
+    if not permissions.speak:
+        await interaction.response.send_message(
+            "Necesito el permiso Hablar en ese canal.", ephemeral=True
+        )
+        return
+    if me.voice is not None and me.voice.mute:
+        await interaction.response.send_message(
+            "Estoy silenciado por el servidor. Quita el silencio antes de usar /join.", ephemeral=True
         )
         return
 
@@ -151,6 +174,15 @@ async def join(interaction: discord.Interaction):
         return
 
     await interaction.response.defer()
+    try:
+        await check_kokoro(server_url=KOKORO_URL, voice=KOKORO_VOICE)
+    except (httpx.HTTPError, ValueError):
+        log.exception("Kokoro is not ready for voice conversation")
+        await interaction.followup.send(
+            "Kokoro no está disponible o su voz no coincide con KOKORO_VOICE. "
+            "Arranca llama_start.py y revisa KOKORO_URL antes de usar /join."
+        )
+        return
     async with voice_locks.setdefault(guild.id, asyncio.Lock()):
         voice_client = guild.voice_client
         session = voice_sessions.get(guild.id)
@@ -163,7 +195,7 @@ async def join(interaction: discord.Interaction):
         ):
             session.text_channel = interaction.channel
             await interaction.followup.send(
-                "Ya estoy escuchando tu canal de voz. Publicaré aquí las transcripciones."
+                "Ya estoy escuchando tu canal de voz y responderé hablando."
             )
             return
         await stop_transcription(guild.id)
@@ -171,16 +203,17 @@ async def join(interaction: discord.Interaction):
             if isinstance(voice_client, voice_recv.VoiceRecvClient) and voice_client.is_connected():
                 if voice_client.channel != channel:
                     await voice_client.move_to(channel)
-                await guild.change_voice_state(channel=channel, self_deaf=False)
+                await guild.change_voice_state(channel=channel, self_deaf=False, self_mute=False)
             else:
                 if voice_client is not None:
                     await voice_client.disconnect(force=True)
                 voice_client = await channel.connect(
-                    cls=voice_recv.VoiceRecvClient, self_deaf=False
+                    cls=voice_recv.VoiceRecvClient, self_deaf=False, self_mute=False
                 )
             session = VoiceTranscription(
                 voice_client, interaction.channel, whisper_lock,
                 server_url=WHISPER_URL, language=WHISPER_LANGUAGE,
+                kokoro_url=KOKORO_URL, kokoro_voice=KOKORO_VOICE, kokoro_speed=KOKORO_SPEED,
             )
             session.start()
             voice_sessions[guild.id] = session
@@ -196,7 +229,8 @@ async def join(interaction: discord.Interaction):
 
     await interaction.followup.send(
         f"Estoy escuchando {channel.mention}. Transcribiré con Whisper lo que "
-        "hablen los usuarios y lo publicaré aquí. Usa /leave para detenerlo."
+        "hablen los usuarios, publicaré la transcripción aquí y responderé "
+        "hablando con Kokoro. Usa /leave para detenerlo."
     )
 
 

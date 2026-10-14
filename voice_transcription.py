@@ -15,6 +15,7 @@ from discord.ext import voice_recv
 
 from whisper_client import transcribe_pcm
 from cli import ask_req, new_history
+from kokoro_client import play_wav, speech_chunks, synthesize_wav
 
 log = logging.getLogger(__name__)
 
@@ -103,17 +104,25 @@ class TranscriptionSink(voice_recv.AudioSink):
 
 
 class VoiceTranscription:
-    def __init__(self, voice_client, text_channel, whisper_lock, *, server_url, language):
+    def __init__(self, voice_client, text_channel, whisper_lock, *, server_url, language,
+                 kokoro_url="http://127.0.0.1:8082", kokoro_voice=None, kokoro_speed=1.0):
         self.voice_client = voice_client
         self.text_channel = text_channel
         self.whisper_lock = whisper_lock
         self.server_url = server_url
         self.language = language
+        self.kokoro_url = kokoro_url
+        self.kokoro_voice = kokoro_voice
+        self.kokoro_speed = kokoro_speed
+        self.stopping = False
         self.sink = TranscriptionSink()
         self.tasks: list[asyncio.Task] = []
         self.last_error = 0.0
         self.llm_queue: asyncio.Queue[tuple[int, str]] = asyncio.Queue(maxsize=32)
         self.transcription_done = asyncio.Event()
+        self.llm_done = asyncio.Event()
+        self.speech_queue: asyncio.Queue[tuple[int, str]] = asyncio.Queue(maxsize=8)
+        self.speech_task: asyncio.Task | None = None
         self.histories: dict[int, list[dict]] = {}
 
     def start(self):
@@ -134,6 +143,7 @@ class VoiceTranscription:
             asyncio.create_task(self._transcribe_loop(), name="voice-whisper"),
             asyncio.create_task(self._llm_loop(), name="voice-llama"),
         ]
+        self.speech_task = asyncio.create_task(self._speech_loop(), name="voice-kokoro")
 
     async def _flush_loop(self):
         while not self.sink.closed:
@@ -200,6 +210,7 @@ class VoiceTranscription:
                 user_id, text = self.llm_queue.get_nowait()
             except asyncio.QueueEmpty:
                 if self.transcription_done.is_set():
+                    self.llm_done.set()
                     return
                 await asyncio.sleep(0.1)
                 continue
@@ -211,11 +222,12 @@ class VoiceTranscription:
                 # Retain the system prompt and the last 20 exchanges per speaker.
                 if len(history) > 41:
                     history[1:] = history[-40:]
-                for offset in range(0, len(response), 1800):
-                    await self.text_channel.send(
-                        f"**Fairy → <@{user_id}>:** {response[offset:offset + 1800]}",
-                        allowed_mentions=discord.AllowedMentions.none(),
-                    )
+                if response.strip() and not self.stopping:
+                    try:
+                        self.speech_queue.put_nowait((user_id, response))
+                    except asyncio.QueueFull:
+                        await self._report_error("Hay demasiadas respuestas de voz pendientes; "
+                                                 "se ha descartado esta respuesta.")
             except Exception:
                 log.exception("Llama request failed for voice user %s", user_id)
                 await self._report_error(
@@ -225,7 +237,41 @@ class VoiceTranscription:
             finally:
                 self.llm_queue.task_done()
 
+    async def _speech_loop(self):
+        while not self.stopping:
+            try:
+                user_id, response = self.speech_queue.get_nowait()
+            except asyncio.QueueEmpty:
+                if self.llm_done.is_set():
+                    return
+                await asyncio.sleep(0.1)
+                continue
+            try:
+                for chunk in speech_chunks(response):
+                    audio = await synthesize_wav(
+                        chunk, server_url=self.kokoro_url, voice=self.kokoro_voice,
+                        speed=self.kokoro_speed,
+                    )
+                    await play_wav(self.voice_client, audio)
+            except Exception:
+                log.exception("Kokoro synthesis or Discord playback failed for user %s", user_id)
+                await self._report_error(
+                    "No he podido reproducir la respuesta. Comprueba Kokoro, "
+                    "el permiso Hablar y que el bot no esté silenciado en el servidor."
+                )
+            finally:
+                self.speech_queue.task_done()
+
     async def stop(self):
+        self.stopping = True
+        # Cancel speech immediately, including an HTTP request or active playback.
+        if self.speech_task:
+            self.speech_task.cancel()
+            await asyncio.gather(self.speech_task, return_exceptions=True)
+            self.speech_task = None
+        while not self.speech_queue.empty():
+            self.speech_queue.get_nowait()
+            self.speech_queue.task_done()
         self.voice_client.stop_listening()
         self.sink.cleanup()
         # Finish the last utterance, but bound shutdown if Whisper is unavailable.
