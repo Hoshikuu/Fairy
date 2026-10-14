@@ -350,9 +350,11 @@ def command_line(server: Path, model: Path) -> str:
         "--host",
         "127.0.0.1",
         "--port",
-        "8080",
+        "8081",
         "--model",
         str(model),
+        "--language",
+        "en",
     ]
     if platform.system().lower() == "windows":
         return subprocess.list2cmdline(args)
@@ -398,7 +400,7 @@ def install(build: dict, assume_yes: bool) -> bool:
     if DEFAULT_MODEL.exists():
         print("\nLocal-only HTTP server command:")
         print(f"  {command_line(server, DEFAULT_MODEL)}")
-        print("Endpoint: http://127.0.0.1:8080/inference")
+        print("Endpoint: http://127.0.0.1:8081/inference")
     else:
         print(
             f"\nModel not found at {DEFAULT_MODEL}. Run model_setup.py first, "

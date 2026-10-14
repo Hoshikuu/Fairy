@@ -1,13 +1,14 @@
-"""Start Fairy's llama.cpp and whisper.cpp HTTP services together.
+"""Start Fairy's llama.cpp, whisper.cpp and Kokoro HTTP services together.
 
-Run ``python main.py`` for local clients, or ``python main.py --host 0.0.0.0``
-to listen on the LAN. Press Ctrl+C to stop both child processes.
+Run ``python llama_start.py`` for local clients, or add ``--host 0.0.0.0``
+to listen on the LAN. Press Ctrl+C to stop all child processes.
 """
 
 from __future__ import annotations
 
 import argparse
 import os
+import re
 import signal
 import socket
 import subprocess
@@ -24,13 +25,22 @@ LLAMA_SERVER = PROJECT_ROOT / "llama" / "llama-server.exe"
 WHISPER_SERVER = PROJECT_ROOT / "whisper" / "Release" / "whisper-server.exe"
 LLAMA_MODEL = PROJECT_ROOT / "models" / "Spark-X2.5-4B-Q4_K_M.gguf"
 WHISPER_MODEL = PROJECT_ROOT / "models" / "ggml-small.bin"
+KOKORO_PYTHON = PROJECT_ROOT / ".venv-kokoro" / (
+    "Scripts/python.exe" if os.name == "nt" else "bin/python"
+)
+KOKORO_SERVER = PROJECT_ROOT / "kokoro_server.py"
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--host", default="127.0.0.1", help="Bind address for both servers")
+    parser.add_argument("--host", default="127.0.0.1", help="Bind address for all servers")
     parser.add_argument("--llama-port", type=int, default=8080)
     parser.add_argument("--whisper-port", type=int, default=8081)
+    parser.add_argument("--kokoro-port", type=int, default=8082)
+    parser.add_argument("--kokoro-python", type=Path, default=KOKORO_PYTHON)
+    parser.add_argument("--kokoro-voice", default="af_heart")
+    parser.add_argument("--kokoro-device", choices=("cpu", "cuda"), default="cpu")
+    parser.add_argument("--kokoro-threads", type=int, default=4)
     parser.add_argument("--llama-model", type=Path, default=LLAMA_MODEL)
     parser.add_argument("--whisper-model", type=Path, default=WHISPER_MODEL)
     parser.add_argument("--llama-gpu-layers", type=int, default=99)
@@ -122,7 +132,7 @@ def stop_children(children: dict[str, subprocess.Popen[str]]) -> None:
 
 
 def listen_for_quit(stop_event: threading.Event) -> None:
-    if not sys.stdin.isatty():
+    if sys.stdin is None:
         return
     while not stop_event.is_set():
         line = sys.stdin.readline()
@@ -138,19 +148,32 @@ def main() -> int:
     children: dict[str, subprocess.Popen[str]] = {}
     stop_event = threading.Event()
     try:
-        if args.llama_port == args.whisper_port:
-            raise RuntimeError("llama.cpp and whisper.cpp need different ports")
+        if len({args.llama_port, args.whisper_port, args.kokoro_port}) != 3:
+            raise RuntimeError("llama.cpp, whisper.cpp and Kokoro need different ports")
+        if args.kokoro_threads < 1 or not re.fullmatch(r"[ab][fm]_[a-z]+", args.kokoro_voice):
+            raise RuntimeError("Kokoro requires positive threads and an English voice such as af_heart")
         require_file(LLAMA_SERVER, "llama-server")
         require_file(WHISPER_SERVER, "whisper-server")
         require_file(args.llama_model, "LLM model")
         require_file(args.whisper_model, "Whisper GGML model")
+        require_file(args.kokoro_python, "Kokoro Python (run python setup/kokoro_setup.py)")
+        require_file(KOKORO_SERVER, "Kokoro service script")
+        result = subprocess.run(
+            [str(args.kokoro_python), "-c", "import kokoro, fastapi, uvicorn, soundfile; import en_core_web_sm"],
+            cwd=PROJECT_ROOT, capture_output=True, text=True, timeout=60,
+        )
+        if result.returncode:
+            raise RuntimeError("Kokoro dependencies unavailable. Run python setup/kokoro_setup.py.\n"
+                               + result.stderr[-2000:])
         require_port(args.host, args.llama_port)
         require_port(args.host, args.whisper_port)
+        require_port(args.host, args.kokoro_port)
 
         if args.check:
             print("Files and ports are ready.")
             print(f"llama.cpp:   {args.llama_model} -> {args.host}:{args.llama_port}")
             print(f"whisper.cpp: {args.whisper_model} -> {args.host}:{args.whisper_port}")
+            print(f"Kokoro:      {args.kokoro_voice} ({args.kokoro_device}) -> {args.host}:{args.kokoro_port}")
             return 0
 
         whisper_command = [
@@ -158,7 +181,7 @@ def main() -> int:
             "--model", str(args.whisper_model.resolve()),
             "--host", args.host,
             "--port", str(args.whisper_port),
-            "--language", "auto",
+            "--language", "en",
             "--no-gpu",
             "--threads", "4",
         ]
@@ -185,11 +208,17 @@ def main() -> int:
         wait_ready("WHISPER", args.host, args.whisper_port, children, timeout=90)
         launch("LLAMA", llama_command, children)
         wait_ready("LLAMA", args.host, args.llama_port, children, timeout=180)
+        launch("KOKORO", [str(args.kokoro_python), "-u", str(KOKORO_SERVER),
+                          "--host", args.host, "--port", str(args.kokoro_port),
+                          "--voice", args.kokoro_voice, "--device", args.kokoro_device,
+                          "--threads", str(args.kokoro_threads)], children)
+        wait_ready("KOKORO", args.host, args.kokoro_port, children, timeout=180)
 
-        print("\nBoth services are ready. Press Ctrl+C or type q + Enter to stop them.")
+        print("\nAll three services are ready. Press Ctrl+C or type q + Enter to stop them.")
         display_host = "127.0.0.1" if args.host == "0.0.0.0" else args.host
         print(f"LLM:     http://{display_host}:{args.llama_port}/v1")
         print(f"Whisper: http://{display_host}:{args.whisper_port}/inference")
+        print(f"Kokoro:  http://{display_host}:{args.kokoro_port}/v1/audio/speech")
         if args.host == "0.0.0.0":
             print("LAN clients can use this computer's IP address instead of 127.0.0.1.")
         threading.Thread(target=listen_for_quit, args=(stop_event,), daemon=True).start()
@@ -203,7 +232,7 @@ def main() -> int:
     except KeyboardInterrupt:
         print("\nStopping services...")
         return 0
-    except (OSError, RuntimeError) as error:
+    except (OSError, RuntimeError, subprocess.TimeoutExpired) as error:
         print(f"\nStartup or service error: {error}", file=sys.stderr)
         return 1
     finally:
