@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#11130f">
+  <meta name="description" content="Una demo local de la futura interfaz de voz de Fairy.">
+  <title>Fairy — Voice playground</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="script.js" defer></script>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <a class="brand" href="#inicio" aria-label="Fairy, inicio"><span class="brand-icon">✳</span> fairy<span class="brand-dot">.</span></a>
+      <div class="header-right"><span class="demo-badge"><span></span> MODELO LOCAL</span><button class="icon-button help" aria-label="Acerca de esta demo" title="Acerca de esta demo">?</button></div>
+    </header>
+
+    <main id="inicio">
+      <section class="intro"><div class="eyebrow"><span></span> TU ESPACIO DE VOZ</div><h1>Una conversación,<br><em>más natural.</em></h1><p>Un lugar para pensar en voz alta, explorar ideas<br class="desktop"> y dejar que la conversación fluya.</p></section>
+      <section class="voice-stage" aria-label="Interfaz de voz">
+        <div class="orbit orbit-one"></div><div class="orbit orbit-two"></div><div class="orbit orbit-three"></div>
+        <div class="orbit-label label-left">VOICE <span>01</span></div><div class="orbit-label label-right">FAIRY <span>✳</span></div>
+        <div class="orb-wrap"><div class="orb-glow"></div><div class="orb" id="orb"><div class="orb-core"></div></div></div>
+      </section>
+      <section class="controls" aria-label="Controles de conversación">
+        <div class="status" role="status" aria-live="polite"><span class="status-dot"></span><span id="status">Lista cuando tú lo estés</span></div>
+        <p class="status-detail" id="detail">Pulsa el micrófono para probar la visualización</p>
+        <button class="mic-button" id="mic" aria-label="Activar micrófono" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="9" y="3" width="6" height="12" rx="3" stroke="currentColor" stroke-width="1.7"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3m-3 0h6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></button>
+        <div class="mic-caption" id="mic-caption">INICIAR MICRÓFONO</div>
+      </section>
+      <section class="bottom-panel" aria-label="Información de sesión">
+        <div class="panel-item"><span class="panel-label">EXPERIENCIA</span><span class="panel-value"><span class="small-star">✳</span> LFM3 Omni 2B <span class="tag">LOCAL</span></span></div>
+        <div class="panel-item"><span class="panel-label">ESTADO</span><span class="panel-value"><span class="online-dot"></span> llama.cpp</span></div>
+        <button class="transcript-toggle" id="transcript-toggle" aria-expanded="false" aria-controls="transcript"><span class="panel-label">CONVERSACIÓN</span><span class="panel-value">Ver transcripción <span class="toggle-arrow">↗</span></span></button>
+      </section>
+      <section id="transcript" class="transcript" hidden><div><span class="panel-label">TRANSCRIPCIÓN</span><h2>Conversación</h2><p>Las respuestas de Fairy aparecerán aquí. La transcripción de tu voz no está disponible en este modo.</p></div><button id="close-transcript" aria-label="Cerrar transcripción">×</button></section>
+    </main>
+    <footer><span>HECHO PARA CONVERSAR <span class="footer-star">✳</span></span><span>UNA IDEA DE FAIRY <span class="footer-number">/ 001</span></span></footer>
+  </div>
+  <dialog id="about"><button id="close-about" aria-label="Cerrar">×</button><span class="panel-label">SOBRE ESTA DEMO</span><h2>Una primera mirada.</h2><p>Fairy Voice envía tu voz al modelo LFM3 Omni local. Pulsa el micrófono para empezar y vuelve a pulsarlo para enviar tu mensaje.</p><p>Concede permiso al micrófono. El modelo genera voz y texto; la conversación de voz funciona mejor en inglés.</p></dialog>
+</body>
+</html>
+
