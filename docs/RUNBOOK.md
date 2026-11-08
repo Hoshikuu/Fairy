@@ -1,76 +1,21 @@
 # Operación de Fairy
 
-## Preparación y arranque
+1. Instala Python 3.15, Git y un driver NVIDIA compatible con CUDA 13.4.
+2. Ejecuta `python setup.py --yes` desde la raíz. Setup prepara la `.venv`, llama.cpp, MiniCPM Q4_K_M, LFM3 Q4_K_M, su proyector y DSpark Q4_K_M en `models/`. Para preparar solo modelos usa `python setup.py --yes --only models`.
+3. Define `TOKEN` en `.env` y habilita Message Content Intent en el portal de Discord.
+4. Ejecuta `./.venv/Scripts/python.exe setup.py --check --verify-models` y `./.venv/Scripts/python.exe main.py --check`. No inician sesión en Discord ni prueban las modalidades.
+5. Ejecuta `./.venv/Scripts/python.exe main.py`, espera a los dos modelos y al login, entra en un canal de voz normal y usa `/join`. Usa `/leave` para desconectar y `q` + Enter para cerrar Fairy.
 
-Con Python 3.12 operativo, desde la raíz:
+## Puertos y recursos
 
-```powershell
-python setup.py --yes
-python setup.py --check --verify-models
-python main.py --check
-python main.py
-```
+LFM3 usa `--port` (8080 por defecto); `FAIRY_OMNI_URL`, si se define, debe coincidir. MiniCPM usa el puerto de `FAIRY_BRAIN_URL` (8082 por defecto), y la web usa `--web-port` (8081). Se requieren tres puertos locales distintos. Si alguno está ocupado, elige otro; Fairy no termina procesos ajenos.
 
-Define TOKEN en `.env` sin copiarlo a logs. Setup separa bot y TTS en `.venv`
-y `.venv-kokoro`. Un fallo de acceso al Python Microsoft Store en un sandbox
-no prueba que el intérprete haya sido eliminado; contrasta fuera de él.
+`FAIRY_BRAIN_MODEL_PATH`, `FAIRY_BRAIN_GPU_LAYERS`, `FAIRY_CONTEXT_SIZE` y `FAIRY_REASONING_MODE` configuran MiniCPM. `FAIRY_OMNI_MODEL_PATH`, `FAIRY_OMNI_PROJECTOR_PATH`, `FAIRY_OMNI_CONTEXT` y `FAIRY_OMNI_GPU_LAYERS` configuran LFM3. Si falta memoria, reduce contexto o capas GPU y mide la latencia. La prueba simultánea previa registró 6023 de 8188 MiB ocupados, incluidos otros procesos; no garantiza margen para cargas prolongadas.
 
-El bot se inicia después de los tres servicios. Usa `q` + Enter para cierre
-conjunto: cancela conexión y sesiones de Discord antes de detener los backends.
+## Discord y pantalla
 
-```powershell
-python main.py --kokoro-port 9082 --kokoro-voice bf_emma
-```
+El bot necesita permisos para conectar, hablar y enviar mensajes. Los canales Stage no están soportados. `/ask` y las menciones abren conversación por texto; `/reset` borra ese contexto. La voz se procesa por usuario mientras Fairy está conectada y el contexto se pierde al desconectar. No se generan comentarios espontáneos por inactividad.
 
-Las opciones se propagan al bot. En ejecución independiente, configura
-LLAMA_URL, WHISPER_URL, KOKORO_URL y la voz correspondiente.
+Para mostrar la pantalla, abre `http://127.0.0.1:8081`, introduce tu ID de Discord y pulsa **Compartir pantalla**. Elige una ventana o pantalla y pregunta a Fairy por ella mediante texto o voz en Discord. MiniCPM decide si llama a `view_screen`; LFM3 analiza el fotograma reciente del ID correspondiente y MiniCPM genera la respuesta. La web solo contiene información y pantalla compartida. Detén la captura con el botón o cerrando la página. Consulta `docs/WEB_LOCAL.md`.
 
-## Dependencias
-
-```powershell
-python setup.py --only bot
-python setup.py --only kokoro
-./.venv/Scripts/python.exe -m pip check
-./.venv-kokoro/Scripts/python.exe -m pip check
-```
-
-No mezcles requisitos de ML con el entorno del bot. Se comprueban versiones
-y la revisión Git del receptor DAVE, además de dependencias transitivas.
-Los requisitos contienen dependencias directas, conservan OpenAI `<3`,
-Kokoro/Misaki 0.9.4, Transformers `<5` y Hugging Face Hub `<1`.
-
-Se contrastó metadata de [Kokoro 0.9.4](https://pypi.org/pypi/kokoro/0.9.4/json)
-y [Transformers 4.57.6](https://pypi.org/pypi/transformers/4.57.6/json) con los
-paquetes instalados. La aplicación utiliza `asyncio.timeout`, por lo que el
-rango validado es Python 3.11–3.12; la referencia probada es 3.12.
-
-## Binarios y modelos
-
-```powershell
-python setup.py --only models --yes --verify-models
-python setup.py --only llama --force --yes
-python setup.py --only whisper --backend cpu --force --yes
-```
-
-`--force` reinstala binarios existentes. No continúes utilizando un modelo
-si falla su SHA-256. Si un puerto está ocupado, elige otro o detén el servicio
-que reconoces; no cierres procesos ajenos por el número de puerto.
-
-## Readiness y voz
-
-El padre espera un JSON atómico con un token de su ejecución, no EOF ni un
-PID aislado. Revisa logs de SERVICES, WHISPER, LLAMA y KOKORO. La espera inicial
-es finita; `--startup-timeout` tiene 360 segundos por defecto.
-
-Comprueba Conectar/Hablar, silencio del servidor y canal de voz normal.
-Usa `/join`, habla en inglés y revisa transcripción/errores por texto.
-`/leave` debe cancelar audio y desconectar.
-
-## Diagnóstico local
-
-```powershell
-./.venv/Scripts/python.exe -u -m fairy.diagnostics.voice_pipeline
-```
-
-Arranca servicios temporales, ejecuta modelos reales y comprueba hasta Opus.
-No inicia sesión en Discord. La llamada audible requiere una comprobación real.
+Comprueba recepción, transcripción, interrupción, salida audible y pantalla con personas y dispositivos reales. La detección por energía puede fallar con ruido. Las pruebas previas con ambos modelos reales no sustituyen una llamada Discord; esta sigue pendiente. No publiques los endpoints locales.

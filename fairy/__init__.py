@@ -1,1 +1,1 @@
-"""Fairy local assistant: Discord, speech clients, services and installers."""
+"""Fairy: local LFM3 Omni voice assistant."""
