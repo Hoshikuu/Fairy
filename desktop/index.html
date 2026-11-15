@@ -4,14 +4,16 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; media-src 'self' blob:; style-src 'self'; script-src 'self'">
 <title>Fairy</title><link rel="stylesheet" href="style.css"></head>
 <body>
-<aside><div class="brand"><span class="spark">✦</span><div><strong>FAIRY</strong><small>YOUR LOCAL COMPANION</small></div></div>
-<div class="status"><span id="dot"></span><span id="status">Starting models…</span></div>
-<div class="side-label">YOUR SPACE</div><h2>Make yourself<br>at home.</h2><p>Chat, talk, or share a view of your screen with Fairy.</p>
-<div class="controls"><button id="screen">Share screen</button><button id="control" aria-pressed="false">Desktop control: off</button><button id="reset">New conversation</button></div>
-<div id="activity" aria-live="polite"></div><p class="foot">Everything stays on this computer.</p></aside>
-<main><header><div><h1>Conversation</h1><p>Just you and Fairy</p></div><span class="local">● &nbsp; LOCAL</span></header>
-<div id="messages" aria-live="polite"><div class="welcome"><span>✧</span><h2>Hey, I'm Fairy.</h2><p>What's on your mind?</p></div></div>
-<div class="composer"><div class="compose-row"><textarea id="input" placeholder="Say something to Fairy…" rows="1" maxlength="4000"></textarea><button id="send" disabled>Send ↗</button></div><div class="actions"><button id="mic" disabled>🎙 Hold to talk</button><button id="stop">Stop response</button><span id="hint">Enter to send · Shift + Enter for a new line</span></div></div>
-</main>
+<header class="topbar">
+<div class="status"><span id="dot"></span><span id="status">Starting models...</span></div>
+<div class="controls"><button id="screen">Share screen</button><button id="control" aria-pressed="false">Control: off</button><button id="vtube" aria-pressed="false">VTube: off</button><button id="reset">New conversation</button></div>
+</header>
+<div id="activity" aria-live="polite"></div>
+<div id="messages" aria-live="polite"></div>
+<div class="composer">
+<div class="compose-row"><textarea id="input" placeholder="Message" rows="1" maxlength="4000"></textarea><button id="send" disabled>Send</button></div>
+<div class="actions"><button id="mic" disabled>Record</button><button id="stop">Stop response</button></div>
+</div>
 <dialog id="picker"><h2>Choose what to share</h2><div id="sources"></div><button id="close-picker">Cancel</button></dialog>
-<script src="renderer.js"></script></body></html>
+<script src="renderer.js"></script>
+</body></html>

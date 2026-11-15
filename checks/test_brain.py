@@ -1,10 +1,12 @@
 """Offline tests for the MiniCPM adapter; no model or Discord connection."""
 
 import asyncio
+import os
 import unittest
 from unittest.mock import patch
 
-from fairy.ai.brain import BrainConfig, BrainSession, Tool, final_text, use_reasoning, validate_arguments
+from fairy.ai.brain import (BrainConfig, BrainSession, Tool, final_text, sanitize_for_speech, use_reasoning,
+                            validate_arguments)
 
 
 class Response:
@@ -112,6 +114,39 @@ class BrainTests(unittest.IsolatedAsyncioTestCase):
                 validate_arguments(schema, value)
         with self.assertRaises(ValueError):
             BrainConfig(url='http://example.com')
+
+    def test_context_defaults_to_2048(self):
+        self.assertEqual(BrainConfig().context, 2048)
+        env = {key: value for key, value in os.environ.items() if not key.startswith('FAIRY_')}
+        with patch.dict(os.environ, env, clear=True):
+            self.assertEqual(BrainConfig.from_env().context, 2048)
+        with patch.dict(os.environ, dict(env, FAIRY_CONTEXT_SIZE='4096'), clear=True):
+            self.assertEqual(BrainConfig.from_env().context, 4096)
+
+
+class SpeechSanitizerTests(unittest.TestCase):
+    def test_removes_emojis_and_symbols(self):
+        self.assertEqual(sanitize_for_speech('Hello there \U0001F600\u2728!'), 'Hello there !')
+        self.assertEqual(sanitize_for_speech('Hehe~ that is *so* cute~'), 'Hehe that is so cute')
+        self.assertEqual(sanitize_for_speech('Sun \u2600\ufe0f and heart \u2764\ufe0f'), 'Sun and heart')
+        self.assertEqual(sanitize_for_speech('Family \U0001F468\u200d\U0001F469\u200d\U0001F467 time'), 'Family time')
+
+    def test_removes_markdown(self):
+        self.assertEqual(sanitize_for_speech('## Title\n**Bold** and __under__ text'), 'Title Bold and under text')
+        self.assertEqual(sanitize_for_speech('- first\n- second\n\u2022 third'), 'first second third')
+        self.assertEqual(sanitize_for_speech('Run `pip check` now'), 'Run pip check now')
+        self.assertEqual(sanitize_for_speech('```python\nprint(1)\n```'), 'print(1)')
+        self.assertEqual(sanitize_for_speech('  many   spaces\n\nhere  '), 'many spaces here')
+
+    def test_keeps_plain_punctuation(self):
+        text = "It's 3:15; ready? Yes, well-known. Great!"
+        self.assertEqual(sanitize_for_speech(text), text)
+
+    def test_final_text_sanitizes_and_rejects_empty_output(self):
+        self.assertEqual(final_text('<think>secret</think>**Sure** \U0001F60A'), 'Sure')
+        for content in ('\U0001F600\U0001F389', '~~ ** ##', '\u2728 \u2764\ufe0f'):
+            with self.assertRaises(RuntimeError):
+                final_text(content)
 
 
 if __name__ == '__main__':
