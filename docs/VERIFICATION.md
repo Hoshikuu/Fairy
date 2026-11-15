@@ -1,5 +1,11 @@
 # Verificación de Fairy con LFM3-Omni
 
+## Aplicación de escritorio
+
+Se ejecutaron 30 pruebas unittest, incluidas tres con clientes simulados para la sesión de escritorio, cancelación y validación de fotogramas. En puertos temporales, los dos modelos reales arrancaron a través del puente: MiniCPM produjo una respuesta y LFM3 generó 192000 bytes PCM; el puente terminó con código 0. En otra ejecución real, al terminar forzadamente el puente, el objeto de trabajo de Windows cerró ambos servidores y sus puertos. También se verificaron compilación, `pip check`, hashes de los tres modelos oficiales y sintaxis JavaScript. Electron abrió una ventana titulada Fairy y cargó ambos modelos, pero el servicio de inspección de ventanas no estaba disponible, por lo que no se verificaron la interfaz ni su cierre normal visualmente.
+
+La evidencia histórica que sigue corresponde a otras rutas y no demuestra la aplicación Electron. Quedan pendientes micrófono físico, reproducción audible, interrupción en la ventana, captura real, control de escritorio y estabilidad prolongada.
+
 ## Modelos Q4 y DSpark
 
 Se verificaron los SHA-256 de MiniCPM Q4, LFM3 Q4, su proyector Q4 y el DSpark BF16 oficial. llama.cpp b11960 cuantizó DSpark a Q4_K_M (180,22 MiB de tensores). En servidores temporales separados, MiniCPM con DSpark respondió a una petición de texto y notificó 49 tokens propuestos y 14 aceptados; LFM3 Q4 con su proyector respondió a una petición de texto. Estas pruebas no verifican su funcionamiento simultáneo, ASR, TTS, visión ni Discord. El BF16 se eliminó después; setup verifica su hash al descargarlo temporalmente. El archivo cuantizado generado localmente no tiene un hash oficial conocido y `--verify-models` no comprueba su integridad criptográfica.

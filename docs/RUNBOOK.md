@@ -1,5 +1,11 @@
 # Operación de Fairy
 
+## Inicio de escritorio actual
+
+En la raíz, ejecuta `python setup.py --yes`. Después, en `desktop/`, ejecuta `npm install`; vuelve a la raíz y ejecuta `./.venv/Scripts/python.exe main.py --check` y `./.venv/Scripts/python.exe main.py`. Espera a que la aplicación indique que los modelos están listos. Cierra la ventana para detenerlos. Consulta el README para grabación, pantalla y control. En este inicio no se usa token de Discord ni se arranca la web antigua.
+
+Las secciones siguientes describen la versión anterior basada en Discord; los parámetros de los modelos siguen siendo útiles.
+
 1. Instala Python 3.15, Git y un driver NVIDIA compatible con CUDA 13.4.
 2. Ejecuta `python setup.py --yes` desde la raíz. Setup prepara la `.venv`, llama.cpp, MiniCPM Q4_K_M, LFM3 Q4_K_M, su proyector y DSpark Q4_K_M en `models/`. Para preparar solo modelos usa `python setup.py --yes --only models`.
 3. Define `TOKEN` en `.env` y habilita Message Content Intent en el portal de Discord.

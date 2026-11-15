@@ -1,0 +1,17 @@
+{
+  "name": "fairy-desktop",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Fairy's local desktop interface",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "check": "node --check main.js && node --check preload.js && node --check renderer.js"
+  },
+  "devDependencies": {
+    "electron": "^39.0.0"
+  },
+  "allowScripts": {
+    "electron@39.8.10": true
+  }
+}

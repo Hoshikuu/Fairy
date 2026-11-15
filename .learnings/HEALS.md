@@ -8,6 +8,25 @@
 **Verification**: Kokoro generated 144096 PCM bytes for an English sentence. Cancellation produced no audio and exited without pipe warnings. Discord playback was not tested.
 **Recurrence-Count**: 1
 
+## HEAL-20261108-002: Electron binary installation
+
+**Status**: verified
+**Trigger**: npm installed the package without its Electron executable
+**Diagnosis**: npm reported the Electron postinstall was not approved; approving and rebuilding still left the executable absent in this environment.
+**Fix**: Downloaded the official Electron 39.8.10 Windows x64 archive, checked its SHA-256 against the package manifest, extracted it into the ignored Electron installation and wrote its path marker. `main.py --check` now checks the executable itself.
+**Verification**: The checked executable started the Fairy window and loaded both local models. The UI automation service was unavailable.
+**Pattern-Key**: electron.postinstall_missing_binary
+**Recurrence-Count**: 1
+
+## HEAL-20261108-003: Desktop bridge shutdown
+
+**Status**: verified
+**Trigger**: A real bridge test exited with Windows status 3221225477; a forced Electron exit also left model processes alive.
+**Fix**: Stop the input reader on shutdown, close the Electron pipe and put the bridge and its children in a Windows job that terminates them on bridge exit.
+**Verification**: A real text-to-speech turn returned 192000 PCM bytes and bridge exit 0. A separate forced-bridge test confirmed that both temporary model ports closed.
+**Pattern-Key**: desktop.bridge_owned_process_shutdown
+**Recurrence-Count**: 1
+
 ## [HEAL-20261014-001] missing_kokoro_discord_output
 
 **Logged**: 2026-10-14
@@ -173,4 +192,14 @@ Descargada la versión oficial b11960 en FairyWeb y ejecutado el servidor local 
 **Diagnosis**: The tool schema alone did not reliably communicate that the current user's screen was available. ASR transcribed the request correctly.
 **Fix**: Add temporary system guidance when a fresh frame is available, explaining that screen questions require the registered tool. Restore instructions and tools after the voice turn.
 **Verification**: With both real models, MiniCPM called `view_screen`, LFM3 analyzed the synthetic frame, MiniCPM answered its main color and LFM3 emitted 199680 PCM bytes. LFM3 also invented unrelated flag details; visual accuracy remains limited. No Discord or human listening was tested. Processes and auxiliaries were cleaned up.
+**Recurrence-Count**: 1
+# HEAL-20261108-001: Python blocked by sandbox
+
+**Status**: verified
+**Trigger**: environment permission error
+**Area**: verification
+
+The virtual environment's Python launcher could not access the base Python 3.15 executable inside the sandbox. Running `./.venv/Scripts/python.exe -m compileall -q fairy/desktop` with approved elevated execution completed successfully. This verifies syntax only.
+
+**Pattern-Key**: env.python_base_access_denied
 **Recurrence-Count**: 1

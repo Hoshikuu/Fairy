@@ -1,48 +1,43 @@
 # Fairy
 
-Fairy es un asistente local para Discord con Python 3.15 y dos servidores llama.cpp. MiniCPM5-2B genera texto, mantiene la conversación y solicita herramientas. LFM3-Omni-2B transcribe voz, analiza imágenes y sintetiza la respuesta final de MiniCPM.
+Fairy es un asistente local con una aplicación de escritorio Electron y dos servidores llama.cpp. MiniCPM5 mantiene la conversación y solicita herramientas; LFM3 transcribe voz, analiza imágenes y sintetiza la respuesta. La aplicación no necesita iniciar sesión en Discord.
 
-## Preparación
+## Preparación en Windows
 
-Instala Python 3.15 y Git para Windows. Desde la raíz:
+Instala Python 3.15, Git y Node.js con npm. Desde la raíz de este repositorio:
 
 ```powershell
 python setup.py --yes
-./.venv/Scripts/python.exe setup.py --check --verify-models
+cd desktop
+npm install
+cd ..
 ./.venv/Scripts/python.exe main.py --check
-```
-
-Setup prepara una sola `.venv`, el fork de recepción DAVE fijado, llama.cpp y los modelos GGUF en `models/`: MiniCPM5 Q4_K_M, LFM3 Q4_K_M, su proyector Q4_K_M y DSpark Q4_K_M. Verifica SHA-256 sin sobrescribir archivos existentes. La instalación automática de llama.cpp está orientada a Windows x64 y CUDA 13.4. No instales simultáneamente otro receptor `discord-ext-voice-recv`.
-
-## Inicio y uso
-
-Si falta DSpark Q4_K_M, setup descarga temporalmente el BF16 oficial, verifica su SHA-256 y genera el modelo cuantizado con `llama-quantize.exe`, sin sobrescribir archivos. La utilidad también acepta un archivo de origen proporcionado manualmente: `./.venv/Scripts/python.exe -m fairy.installation.quantize --source ruta/al/dspark.gguf --output models/otro-dspark.gguf`. MiniCPM utiliza DSpark para decodificación especulativa; `FAIRY_DRAFT_MODEL_PATH` permite elegir otro archivo compatible.
-
-Define `TOKEN` en `.env`, habilita Message Content Intent y ejecuta:
-
-```powershell
 ./.venv/Scripts/python.exe main.py
 ```
 
-Fairy inicia LFM3 en `127.0.0.1:8080` y MiniCPM en `127.0.0.1:8082`, espera `/health`, inicia la web en `http://127.0.0.1:8081` y conecta Discord. `q` + Enter o Ctrl+C solicita el cierre. Usa `--port` y `--web-port` para cambiar los puertos de LFM3 y la web.
+Si Node está instalado en `C:\Program Files\nodejs` pero no está en el PATH, abre una nueva terminal después de instalarlo o añade esa carpeta al PATH. Según la versión de npm, puede ser necesario aprobar el script de instalación de Electron cuando npm lo indique. `setup.py` conserva las dependencias fijadas del receptor DAVE de la versión anterior; la aplicación de escritorio no las usa. Los modelos y binarios existentes no se sobrescriben.
 
-Usa `/ask` o una mención para texto, `/join` para conversar por voz y `/leave` para desconectar. Fairy anuncia que escucha, separa el audio por usuario, detecta el fin de cada intervención y permite interrumpir su respuesta. Solo responde a intervenciones; no genera comentarios espontáneos. `/reset` borra el contexto de texto del usuario en ese servidor o conversación privada. El contexto de voz es por usuario y se pierde al cerrar la sesión; no se guardan grabaciones por defecto.
+## Uso
 
-Un mensaje admite hasta cuatro adjuntos JPEG, PNG o WebP de 8 MiB cada uno; `/ask` admite un adjunto. LFM3 analiza las imágenes según la pregunta y MiniCPM produce la respuesta. Para compartir pantalla, abre la web, introduce tu ID de Discord y elige una ventana o pantalla. MiniCPM dispone de la herramienta `view_screen` en texto y voz mientras exista un fotograma reciente del mismo ID. LFM3 analiza ese fotograma cuando MiniCPM lo solicita. La web es informativa y ofrece captura de pantalla; las conversaciones se realizan en Discord. Consulta [docs/WEB_LOCAL.md](docs/WEB_LOCAL.md).
+Espera a que ambos modelos estén listos. Escribe y pulsa **Send**; o pulsa **Record voice**, habla y pulsa **Stop recording**. La grabación termina automáticamente tras 30 segundos. **Stop response** cancela la generación y detiene el audio pendiente. **New conversation** borra el contexto de la sesión.
 
-## Configuración
+Con **Share screen** elige una pantalla o ventana; Fairy recibe fotogramas mientras esté activa y puede analizarlos cuando le preguntes. **Stop sharing** elimina el fotograma. El análisis se realiza bajo demanda, no es vídeo continuo interpretado automáticamente.
 
-`FAIRY_BRAIN_URL`, `FAIRY_BRAIN_MODEL_PATH`, `FAIRY_BRAIN_GPU_LAYERS`, `FAIRY_CONTEXT_SIZE` y `FAIRY_REASONING_MODE` configuran MiniCPM. `FAIRY_OMNI_MODEL_PATH`, `FAIRY_OMNI_PROJECTOR_PATH`, `FAIRY_OMNI_CONTEXT` y `FAIRY_OMNI_GPU_LAYERS` configuran LFM3. `FAIRY_OMNI_URL`, si se establece, debe usar localhost y el puerto `--port`. Los tres servicios requieren puertos distintos. Los valores predeterminados de `FAIRY_ASR_LANGUAGE`, `FAIRY_TTS_LANGUAGE` y `FAIRY_TTS_VOICE` son `English`, `English` y `female`. Consulta [docs/RUNBOOK.md](docs/RUNBOOK.md).
+**Desktop control: on** permite a Fairy hacer clics en coordenadas físicas del escritorio y pulsar teclas de navegación; la acción se muestra en la barra lateral. Desactívalo cuando no quieras permitir esas acciones. Esta primera versión no escribe texto, ejecuta comandos ni proporciona una máquina virtual o un sandbox de aplicaciones. Las coordenadas de la imagen reducida no necesariamente coinciden con las coordenadas físicas del escritorio: no se ha demostrado un control visual fiable.
 
-## Verificación y límites
+La conversación y los fotogramas son temporales y se pierden al cerrar. El puente entre Electron y Python utiliza tuberías del proceso; los servidores de modelos escuchan en localhost. La antigua web de pantalla y los módulos de Discord no forman parte del arranque de escritorio. No publiques los servicios locales; consulta [docs/WEB_LOCAL.md](docs/WEB_LOCAL.md).
+
+## Configuración y verificación
+
+LFM3 usa por defecto el puerto 8080 (`FAIRY_DESKTOP_OMNI_PORT` y, si se configura, `FAIRY_OMNI_URL` deben coincidir); MiniCPM usa 8082 (`FAIRY_BRAIN_URL`). Ambos deben estar libres y ser distintos. `FAIRY_ASR_LANGUAGE`, `FAIRY_TTS_LANGUAGE` y `FAIRY_TTS_VOICE` conservan sus valores predeterminados `English`, `English` y `female`. Los modelos y la GPU se configuran con las variables descritas en [docs/RUNBOOK.md](docs/RUNBOOK.md).
 
 ```powershell
 ./.venv/Scripts/python.exe -m compileall -q fairy main.py setup.py
 ./.venv/Scripts/python.exe -m pip check
+./.venv/Scripts/python.exe -m unittest discover -s checks -v
 ./.venv/Scripts/python.exe setup.py --check --verify-models
 ./.venv/Scripts/python.exe main.py --check
-./.venv/Scripts/python.exe -m unittest discover -s checks -v
 git diff --check
 ```
 
-Ambos modelos ya respondieron simultáneamente en una prueba real; se comprobaron razonamiento y una llamada de herramienta de MiniCPM, además de visión, síntesis y transcripción de LFM3. La GPU registró 6023 de 8188 MiB ocupados, incluidos otros procesos, en esa medición puntual. Consulta [docs/VERIFICATION.md](docs/VERIFICATION.md) para distinguir la evidencia real de las pruebas simuladas. Faltan login y llamada Discord reales, escucha e interrupción audible, captura física de pantalla y estabilidad prolongada. Mantén los servicios locales: la web no está preparada para publicación. `afairy` y `bfairy` son versiones históricas conservadas.
+Las comprobaciones automáticas no demuestran captura física, escucha audible ni control correcto de ventanas reales. Consulta [docs/VERIFICATION.md](docs/VERIFICATION.md) para el estado de las pruebas. `afairy` y `bfairy` se conservan como versiones históricas.

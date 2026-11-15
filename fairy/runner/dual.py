@@ -4,6 +4,7 @@ import asyncio
 import os
 from pathlib import Path
 import subprocess
+import sys
 from urllib.parse import urlsplit
 
 from fairy.ai.brain import BrainConfig
@@ -50,7 +51,7 @@ async def start_brain(timeout: float) -> subprocess.Popen:
                "-md", str(draft.resolve()), "--spec-type", "draft-dspark", "--spec-draft-n-max", "7",
                "-ngld", str(layers), "-fa", "on"]
     print(f"[STRT]  Starting MiniCPM on port {port}; GPU layers: {layers}", flush=True)
-    process = subprocess.Popen(command, cwd=SERVER.parent, stdin=subprocess.DEVNULL)
+    process = subprocess.Popen(command, cwd=SERVER.parent, stdin=subprocess.DEVNULL, stdout=sys.stderr, stderr=sys.stderr)
     try:
         await wait_ready(process, port, timeout, name="MiniCPM")
     except BaseException:
@@ -72,7 +73,7 @@ async def start_omni(timeout: float, port: int = 8080) -> subprocess.Popen:
                "--jinja", "--host", "127.0.0.1", "--port", str(port), "-ngl", str(layers),
                "-c", str(context), "--reasoning", "off", "--cors-origins", "localhost"]
     print(f"[STRT]  Starting LFM3 on port {port}; GPU layers: {layers}", flush=True)
-    process = subprocess.Popen(command, cwd=SERVER.parent, stdin=subprocess.DEVNULL)
+    process = subprocess.Popen(command, cwd=SERVER.parent, stdin=subprocess.DEVNULL, stdout=sys.stderr, stderr=sys.stderr)
     try:
         await wait_ready(process, port, timeout, name="LFM3")
     except BaseException:

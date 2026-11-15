@@ -14,3 +14,4 @@ afairy/
 bfairy/
 
 *.gguf
+desktop/node_modules/

@@ -1,5 +1,7 @@
 # Fairy web local
 
+La siguiente página corresponde a la versión anterior de Discord. La aplicación Electron actual no inicia esta web y usa su propia captura de pantalla. No se debe publicar ninguno de los servicios locales sin diseñar y verificar autenticación, HTTPS y controles de acceso.
+
 La web se inicia con `main.py` y escucha solo en `127.0.0.1:8081`. Contiene información del proyecto y el apartado para compartir una pantalla o ventana con Fairy. La conversación y la voz se realizan en Discord.
 
 También puede iniciarse por separado con `./.venv/Scripts/python.exe -m fairy.web --port 8081`. Para que Fairy analice la pantalla durante una conversación, el bot y los modelos deben estar funcionando en el mismo proceso principal; la web independiente solo ofrece la página y recibe fotogramas.
