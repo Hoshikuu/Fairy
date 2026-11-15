@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0b0c17">
+  <meta name="description" content="Fairy is a local AI companion for Discord.">
+  <title>Fairy — A local companion for Discord</title>
+  <link rel="stylesheet" href="/assets/style.css">
+  <script src="/assets/app.js" defer></script>
+</head>
+<body>
+<header class="top wrap">
+  <a class="brand" href="#top">fairy<span>.</span></a>
+  <nav class="nav" aria-label="Main navigation">
+    <a href="#about" data-en="About" data-es="Acerca de">About</a>
+    <a href="#screen" data-en="Screen" data-es="Pantalla">Screen</a>
+    <button class="lang" id="language" aria-label="Cambiar idioma a español">Español</button>
+  </nav>
+</header>
+<main>
+  <section class="hero wrap" id="top">
+    <div>
+      <div class="eyebrow" data-en="Meet Fairy" data-es="Conoce a Fairy">Meet Fairy</div>
+      <h1><span data-en="Curiosity," data-es="Curiosidad,">Curiosity,</span><br><em data-en="ready to" data-es="lista para">ready to</em><br><span data-en="listen." data-es="escuchar.">listen.</span></h1>
+      <p data-en="A local AI companion for Discord. Talk, share ideas and show Fairy what you're working on." data-es="Una compañera de IA local para Discord. Habla, comparte ideas y enseña a Fairy en qué estás trabajando.">A local AI companion for Discord. Talk, share ideas and show Fairy what you're working on.</p>
+      <div class="buttons"><a class="button primary" href="#about"><span data-en="Discover Fairy" data-es="Descubre Fairy">Discover Fairy</span> ↘</a><a class="button outline" href="#screen"><span data-en="Share your screen" data-es="Comparte tu pantalla">Share your screen</span> ↗</a></div>
+    </div>
+    <div class="scene" aria-hidden="true"><span class="spark s1">✳</span><span class="spark s2">✦</span><span class="spark s3">✧</span><span class="spark s4">✦</span><div class="window"><div class="winbar"><i></i><i></i><i></i><span>fairy / workspace</span></div><div class="terminal"><div><strong>~/</strong> <span class="white">fairy</span> --discord</div><div>&nbsp;</div><div><strong>✦</strong> <span data-en="local intelligence" data-es="inteligencia local">local intelligence</span></div><div><strong>✦</strong> <span data-en="voice &amp; conversation" data-es="voz y conversación">voice &amp; conversation</span></div><div><strong>✦</strong> <span data-en="vision &amp; interaction" data-es="visión e interacción">vision &amp; interaction</span></div><div>&nbsp;</div><div><strong>→</strong> <span data-en="made to explore" data-es="creada para explorar">made to explore</span> <b class="cursor"></b></div></div></div><div class="scene-note">LOCAL AI / ✧</div></div>
+  </section>
+  <div class="band"><div class="wrap band-inner"><span><strong>01 /</strong> LOCAL AI</span><span><strong>02 /</strong> DISCORD</span><span><strong>03 /</strong> VOICE</span><span><strong>04 /</strong> VISION</span></div></div>
+  <section class="section wrap" id="about"><div class="section-head"><div><div class="eyebrow" data-en="A little about Fairy" data-es="Un poco sobre Fairy">A little about Fairy</div><h2 data-en="A companion in conversation." data-es="Una compañera de conversación.">A companion in conversation.</h2></div><p data-en="An evolving project, built to run on local hardware." data-es="Un proyecto en desarrollo, creado para funcionar en hardware local.">An evolving project, built to run on local hardware.</p></div>
+    <article class="project"><div class="project-number">01 /</div><div><div class="project-type">DISCORD / VOICE</div><h3 data-en="Listen &amp; speak." data-es="Escuchar y hablar.">Listen &amp; speak.</h3></div><div class="project-copy"><p data-en="Join a voice channel and use /join. Fairy listens to each speaker and responds in the channel. Use /leave to disconnect." data-es="Entra en un canal de voz y usa /join. Fairy escucha a cada persona y responde en el canal. Usa /leave para desconectar.">Join a voice channel and use /join. Fairy listens to each speaker and responds in the channel. Use /leave to disconnect.</p><div class="tags"><span>Discord</span><span>Audio</span><span>Local</span></div></div></article>
+    <article class="project"><div class="project-number">02 /</div><div><div class="project-type">VISION / SCREEN</div><h3 data-en="See the context." data-es="Ver el contexto.">See the context.</h3></div><div class="project-copy"><p data-en="Attach an image or share your screen below, then ask Fairy about it in Discord." data-es="Adjunta una imagen o comparte tu pantalla abajo y pregunta a Fairy por ella en Discord.">Attach an image or share your screen below, then ask Fairy about it in Discord.</p><div class="tags"><span>JPEG</span><span>PNG</span><span>LFM3</span></div></div></article>
+  </section>
+  <section class="wrap" id="screen"><div class="lab screen-layout"><div><div class="eyebrow" data-en="Screen sharing" data-es="Compartir pantalla">Screen sharing</div><h2 data-en="Show Fairy your screen." data-es="Enseña tu pantalla a Fairy.">Show Fairy your screen.</h2><p data-en="Enter your Discord user ID, choose a screen or window, and ask Fairy about it in your voice channel. MiniCPM can request a visual analysis of your latest shared frame when it needs one to answer. Frames stay briefly in memory and sharing stops when you close this page." data-es="Introduce tu ID de Discord, elige una pantalla o ventana y pregunta a Fairy por ella en tu canal de voz. MiniCPM puede solicitar un análisis visual del último fotograma compartido cuando lo necesita para responder. Los fotogramas permanecen brevemente en memoria y se dejan de compartir al cerrar esta página.">Enter your Discord user ID, choose a screen or window, and ask Fairy about it in your voice channel. MiniCPM can request a visual analysis of your latest shared frame when it needs one to answer. Frames stay briefly in memory and sharing stops when you close this page.</p><p class="small" data-en="The ID identifies the speaker but does not authenticate them. This service is for local use only. Discord Go Live is not connected." data-es="El ID identifica al hablante, pero no autentica su identidad. Este servicio es solo para uso local. Discord Go Live no está conectado.">The ID identifies the speaker but does not authenticate them. This service is for local use only. Discord Go Live is not connected.</p><label for="discord-id" data-en="Your Discord user ID" data-es="Tu ID de usuario de Discord">Your Discord user ID</label><input id="discord-id" inputmode="numeric" pattern="[0-9]{15,20}" maxlength="20" autocomplete="off" placeholder="123456789012345678"><div class="buttons"><button id="share" class="button primary" data-en="Share screen ↗" data-es="Compartir pantalla ↗">Share screen ↗</button><button id="stop-share" class="button outline" disabled data-en="Stop sharing" data-es="Dejar de compartir">Stop sharing</button></div><p id="screen-status" role="status" aria-live="polite"></p></div><div class="preview"><video id="preview" autoplay muted playsinline hidden></video><span id="preview-empty" data-en="Your screen preview will appear here." data-es="Aquí aparecerá la vista previa de tu pantalla.">Your screen preview will appear here.</span></div></div></section>
+  <section class="section wrap"><div class="about-note"><div><div class="eyebrow" data-en="A project by Hoshiku" data-es="Un proyecto de Hoshiku">A project by Hoshiku</div><h3 data-en="Built to explore." data-es="Creada para explorar.">Built to explore.</h3></div><p data-en="Fairy brings local models and Discord together in an ongoing experiment with conversation, audio and vision." data-es="Fairy reúne modelos locales y Discord en un experimento continuo con conversación, audio y visión.">Fairy brings local models and Discord together in an ongoing experiment with conversation, audio and vision.</p></div></section>
+</main>
+<footer class="closing wrap"><span>fairy ✦</span><span data-en="Built by Hoshiku." data-es="Creado por Hoshiku.">Built by Hoshiku.</span></footer>
+
+</body>
+</html>

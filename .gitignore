@@ -1,11 +1,17 @@
-__OLD
-
 llama
+llama-omni/
 models
 whisper
 
 __pycache__
+
+.venv/
 .venv-kokoro/
 
 .env
-mp4.mp3
+
+afairy/
+bfairy/
+
+*.gguf
+desktop/node_modules/

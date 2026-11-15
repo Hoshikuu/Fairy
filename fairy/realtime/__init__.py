@@ -1,0 +1,1 @@
+"""Local multimodal model clients."""
