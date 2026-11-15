@@ -1,11 +1,32 @@
 """A single local desktop conversation independent of Discord."""
 
 import asyncio
+import re
 from collections.abc import Awaitable, Callable
 
 from fairy.ai.brain import BrainConfig, BrainSession
 from fairy.ai.screen import SCREEN_TOOL_INSTRUCTIONS, screen_tool
 from fairy.realtime.omni import OmniClient
+
+MIN_SPEECH_FRAGMENT = 20
+
+
+def split_speech_sentences(text: str) -> list[str]:
+    """Split a reply into sentences for TTS, merging fragments that are too short."""
+    text = text.strip()
+    merged: list[str] = []
+    pending = ""
+    for part in re.split(r"(?<=[.!?])\s+", text):
+        pending = f"{pending} {part}".strip()
+        if len(pending) >= MIN_SPEECH_FRAGMENT:
+            merged.append(pending)
+            pending = ""
+    if pending:
+        if merged:
+            merged[-1] = f"{merged[-1]} {pending}"
+        else:
+            merged.append(pending)
+    return merged or [text]
 
 
 class DesktopSession:
@@ -54,7 +75,8 @@ class DesktopSession:
                     self.brain.tools = {**tools, "view_screen": screen_tool(self.omni, frame_provider)}
                     self.brain.instructions += SCREEN_TOOL_INSTRUCTIONS
                 answer = await self.brain.respond_text(message)
-                await self.omni.speak(answer, on_audio)
+                for sentence in split_speech_sentences(answer):
+                    await self.omni.speak(sentence, on_audio)
                 return answer
             except BaseException:
                 self.brain.history[:] = history

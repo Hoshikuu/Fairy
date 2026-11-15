@@ -8,9 +8,11 @@ import sys
 import threading
 import time
 
+from fairy.ai.tools import assistant_tools
 from fairy.desktop.session import DesktopSession
 from fairy.desktop.control import desktop_tools
 from fairy.desktop.job import attach_process_job
+from fairy.desktop.vtube import VTubeClient, compute_rms_mouth_open, vtube_tools
 from fairy.paths import PROMPT, ROOT
 from fairy.realtime.omni import OmniClient
 from fairy.runner.dual import brain_settings, omni_settings, start_brain, start_omni
@@ -31,6 +33,8 @@ class Bridge:
         self.brain_process = None
         self.omni_process = None
         self.control_enabled = False
+        self.vtube_enabled = False
+        self.vtube = VTubeClient()
 
     def emit(self, kind: str, **data) -> None:
         self.output.write(json.dumps({"type": kind, **data}, ensure_ascii=True) + "\n")
@@ -44,9 +48,9 @@ class Bridge:
             port = int(os.getenv("FAIRY_DESKTOP_OMNI_PORT", "8080"))
             if omni_settings(port)[0] != port or brain_settings()[0] == port:
                 raise ValueError("Model ports must be different and match their configured URLs")
-            self.emit("status", message="Starting MiniCPM…")
+            self.emit("status", message="Starting MiniCPM...")
             self.brain_process = await start_brain(360)
-            self.emit("status", message="Starting LFM3…")
+            self.emit("status", message="Starting LFM3...")
             self.omni_process = await start_omni(360, port)
             omni = OmniClient(f"http://127.0.0.1:{port}",
                               asr_language=os.getenv("FAIRY_ASR_LANGUAGE", "English"),
@@ -55,6 +59,10 @@ class Bridge:
             self.session = DesktopSession(omni, PROMPT.read_text(encoding="utf-8"))
             self.session.brain.tools.update(desktop_tools(lambda: self.control_enabled,
                                                          lambda action: self.emit("action", message=action)))
+            self.session.brain.tools.update(assistant_tools(
+                notify=lambda action: self.emit("action", message=action)))
+            self.session.brain.tools.update(vtube_tools(
+                self.vtube, notify=lambda expression: self.emit("expression", expression=expression)))
             self.emit("ready", pid=os.getpid())
             while not self.stopping.is_set():
                 if self.brain_process.poll() is not None or self.omni_process.poll() is not None:
@@ -81,9 +89,21 @@ class Bridge:
 
             async def audio(chunk: bytes) -> None:
                 self.emit("audio", data=base64.b64encode(chunk).decode("ascii"))
+                if self.vtube_enabled:
+                    try:
+                        await self.vtube.set_mouth_open(compute_rms_mouth_open(chunk))
+                    except Exception:
+                        pass
 
-            result = await self.session.respond(text=text if pcm is None else None, pcm=pcm,
-                                                on_audio=audio, frame_provider=self.current_frame)
+            try:
+                result = await self.session.respond(text=text if pcm is None else None, pcm=pcm,
+                                                    on_audio=audio, frame_provider=self.current_frame)
+            finally:
+                if self.vtube_enabled:
+                    try:
+                        await asyncio.shield(self.vtube.set_mouth_open(0.0))
+                    except Exception:
+                        pass
             self.emit("answer", text=result)
         except asyncio.CancelledError:
             self.emit("cancelled")
@@ -111,6 +131,8 @@ class Bridge:
             self.frame = None
         elif kind == "control":
             self.control_enabled = message.get("enabled") is True
+        elif kind == "vtube":
+            self.vtube_enabled = message.get("enabled") is True
         elif kind == "reset":
             if self.turn:
                 raise ValueError("Stop the current turn first")
@@ -168,6 +190,10 @@ class Bridge:
                 await self.session.close()
             self.startup.cancel()
             await asyncio.gather(self.startup, return_exceptions=True)
+            try:
+                await self.vtube.close()
+            except Exception:
+                pass
             await stop_llama(self.omni_process)
             await stop_llama(self.brain_process)
             await asyncio.to_thread(reader.join, 2)
