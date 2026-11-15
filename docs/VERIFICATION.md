@@ -1,5 +1,57 @@
 # Verificación de Fairy con LFM3-Omni
 
+## Aplicación de escritorio: UI, herramientas, VRAM y VTube Studio
+
+Se ejecutaron 71 pruebas unitarias automáticas con éxito en 2,51 segundos (`Ran 71 tests in 2.509s, OK`). Todas las pruebas se ejecutan de manera completamente fuera de línea y aislada:
+
+- `compileall -q fairy main.py setup.py checks`: Sin errores de sintaxis ni importación en Python 3.15.
+- `pip check`: Ningún conflicto de dependencias (`No broken requirements found.`).
+- `setup.py --check --verify-models`: Comprobación superada. Verifica la build 11960 de llama-server y valida los hashes SHA-256 de los modelos oficiales: MiniCPM5-2B-Q4_K_M (1,5 GiB), LFM3-Omni-2B-Q4_K_M (1,0 GiB) y mmproj-LFM3-Omni-2B-Q4_K_M (278,1 MiB).
+- `main.py --check`: Comprobación superada (`[PASS] Desktop prerequisites and model files found; models were not started.`).
+- `node --check desktop/main.js`, `desktop/preload.js` y `desktop/renderer.js`: Sintaxis JavaScript válida sin errores.
+- `git diff --check`: Sin errores de formato ni espacios sobrantes.
+
+### Desglose de las 71 pruebas unitarias (`checks/`)
+
+1. **MiniCPM y personalidad (`checks/test_brain.py` - 11 pruebas)**:
+   - Aislamiento de turnos, preservación del orden bajo concurrencia, valor predeterminado de contexto en 2048 tokens.
+   - Ocultación y descarte estricto de etiquetas de razonamiento interno (`<think>`).
+   - Ciclo de invocación y rechazo seguro de argumentos de herramientas no conformes.
+   - Filtro de voz `sanitize_for_speech`: supresión de emojis, kaomojis, asteriscos y sintaxis Markdown, conservando puntuación básica en inglés.
+2. **Servidor y optimización de VRAM (`checks/test_brain_server.py` - 7 pruebas)**:
+   - Configuración predeterminada optimizada para VRAM sin modelo draft (`FAIRY_USE_DRAFT=0`, omisión de parámetros `-md`).
+   - Activación opcional de decodificación especulativa con DSpark condicionada a la existencia del archivo de pesos.
+   - Verificación de capas GPU (`FAIRY_BRAIN_GPU_LAYERS=20`) y contexto (`FAIRY_OMNI_CONTEXT=2048`, `FAIRY_CONTEXT_SIZE=2048`).
+   - Parámetros Flash Attention (`-fa on`) y cuantización de claves/valores de atención (`-ctk q8_0 -ctv q8_0`) en LFM3 y MiniCPM.
+   - Terminación inmediata de procesos no reclamados si falla el sondeo de preparación.
+3. **Escritorio, control y streaming (`checks/test_desktop.py` - 15 pruebas)**:
+   - Validación de esquema de herramientas de control (`desktop_tools`) aceptadas por el validador estricto de Brain (`type`, `description`, `enum`).
+   - Escalado proporcional de coordenadas de clic (`desktop_click`) basado en las dimensiones de captura (`screen_width`, `screen_height`) respecto a la resolución real del monitor (`GetSystemMetrics`).
+   - Bloqueo y denegación de `desktop_type`, `desktop_scroll` y `media_control` cuando el control de escritorio está desactivado.
+   - Validación de tamaño nativo de 40 bytes para la estructura Win32 `INPUT` en sistemas Windows x64.
+   - Segmentación de habla por oraciones (`split_speech_sentences`): agrupación de fragmentos menores a 20 caracteres y emisión secuencial de llamadas `omni.speak`.
+   - Toggle del comando `vtube` en el puente, registro de herramientas y resiliencia ante errores de VTube Studio sin interrumpir la voz.
+4. **Herramientas de asistencia y VTube Studio (`checks/test_tools_vtube.py` - 19 pruebas)**:
+   - `get_current_time`: Formato de fecha, hora local y marca ISO.
+   - `get_active_windows`: Acotación JSON y lectura de títulos de ventanas activas mediante `EnumWindows`.
+   - `get_system_stats`: Métricas de disco, memoria física (`GlobalMemoryStatusEx`) y GPU (mediante simulación de `nvidia-smi` y gestión de fallo).
+   - `remember_fact` y `recall_facts`: Escritura y recuperación de memoria local en directorio temporal (`tempfile.TemporaryDirectory()`), validación de longitud de claves/valores y límite de 100 entradas.
+   - Cálculo RMS de sincronización labial (`compute_rms_mouth_open`): verificación de respuesta ante silencio, audio alto y paquetes vacíos.
+   - Cliente VTube Studio (`VTubeClient`): constructor completamente fuera de línea, restricción a URLs WebSocket locales (`ws://127.0.0.1` o `ws://localhost`), protocolo JSON Public API v1.0, reutilización de `.vtube_token` guardado y validación de `set_expression`.
+   - Verificación de assets: ausencia de emojis y cumplimiento de contratos en `desktop/index.html` y `fairy/prompts/system.txt`.
+5. **Voz dual, apagado, pantalla y web (`checks/` - 19 pruebas)**:
+   - Pruebas en `test_dual_voice.py` (4 pruebas), `test_runner_shutdown.py` (2 pruebas), `test_screen.py` (1 prueba), `test_setup_models.py` (3 pruebas), `test_voice_session.py` (3 pruebas) y `test_web.py` (6 pruebas).
+
+### Configuración de VRAM y límites de verificación
+
+Las pruebas unitarias confirman la construcción de comandos con los parámetros optimizados para GPU:
+- MiniCPM arranca con `-ngl 20`, contexto `-c 2048`, Flash Attention `-fa on`, caché cuantizada `-ctk q8_0 -ctv q8_0` y omisión de decodificación especulativa (`FAIRY_USE_DRAFT=0`).
+- LFM3 arranca con `-ngl 99`, contexto `-c 2048`, `-fa on` y `-ctk q8_0 -ctv q8_0`.
+
+Diferenciación estricta entre pruebas fuera de línea y entorno en vivo:
+- Las pruebas unitarias se ejecutan de forma aislada con procesos locales, clientes simulados y directorios temporales, sin realizar inferencia real en GPU ni llamadas de red externa.
+- Quedan pendientes de validación en vivo: la medición física del consumo real de VRAM en GPU bajo los nuevos parámetros por defecto, la conexión WebSocket real con VTube Studio en ejecución y su diálogo de autorización, la detección acústica de voz y silencio (VAD) con micrófono físico y el control visual interactivo de ventanas reales del escritorio.
+
 ## Aplicación de escritorio
 
 Se ejecutaron 30 pruebas unittest, incluidas tres con clientes simulados para la sesión de escritorio, cancelación y validación de fotogramas. En puertos temporales, los dos modelos reales arrancaron a través del puente: MiniCPM produjo una respuesta y LFM3 generó 192000 bytes PCM; el puente terminó con código 0. En otra ejecución real, al terminar forzadamente el puente, el objeto de trabajo de Windows cerró ambos servidores y sus puertos. También se verificaron compilación, `pip check`, hashes de los tres modelos oficiales y sintaxis JavaScript. Electron abrió una ventana titulada Fairy y cargó ambos modelos, pero el servicio de inspección de ventanas no estaba disponible, por lo que no se verificaron la interfaz ni su cierre normal visualmente.

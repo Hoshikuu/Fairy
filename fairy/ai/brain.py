@@ -23,7 +23,7 @@ class BrainConfig:
     url: str = "http://127.0.0.1:8082"
     model: str = "local"
     reasoning: str = "auto"
-    context: int = 4096
+    context: int = 2048
     max_output: int = 512
     history_turns: int = 12
     temperature: float = 0.7
@@ -45,7 +45,7 @@ class BrainConfig:
             url=os.getenv("FAIRY_BRAIN_URL", "http://127.0.0.1:8082"),
             model=os.getenv("FAIRY_BRAIN_MODEL", "local"),
             reasoning=os.getenv("FAIRY_REASONING_MODE", "auto").lower(),
-            context=int(os.getenv("FAIRY_CONTEXT_SIZE", "4096")),
+            context=int(os.getenv("FAIRY_CONTEXT_SIZE", "2048")),
             max_output=int(os.getenv("FAIRY_BRAIN_MAX_OUTPUT", "512")),
             history_turns=int(os.getenv("FAIRY_HISTORY_TURNS", "12")),
             temperature=float(os.getenv("FAIRY_BRAIN_TEMPERATURE", "0.7")),
@@ -72,6 +72,21 @@ def use_reasoning(mode: str, text: str) -> bool:
     return bool(re.search(r"\b(code|debug|traceback|math|equation|calculate|algorithm|c[oó]digo|error|calcula|ecuaci[oó]n|demuestra|analiza)\b", text, re.I))
 
 
+_SPEECH_NOISE_RE = re.compile(
+    r"[\U00010000-\U0010ffff\u2600-\u27bf\u2300-\u23ff\u2b00-\u2bff\u2190-\u21ff\u25a0-\u25ff\u200d\ufe0e\ufe0f\u20e3•]"
+)
+
+
+def sanitize_for_speech(text: str) -> str:
+    """Strip markdown, symbols, and emojis so output is clean for TTS speech."""
+    cleaned = re.sub(r"```[A-Za-z0-9_+-]*\s*", " ", text)
+    cleaned = cleaned.replace("`", "")
+    cleaned = re.sub(r"(?m)^[ \t]*[-•*]+[ \t]+", "", cleaned)
+    cleaned = re.sub(r"[*_~#]+", "", cleaned)
+    cleaned = _SPEECH_NOISE_RE.sub("", cleaned)
+    return re.sub(r"\s+", " ", cleaned).strip()
+
+
 def final_text(content: object) -> str:
     if not isinstance(content, str):
         raise RuntimeError("Brain returned invalid content")
@@ -81,9 +96,10 @@ def final_text(content: object) -> str:
         raise RuntimeError("Brain returned incomplete reasoning markers")
     if re.search(r"</?(?:tool_call|function)(?:\s|>)", content, flags=re.I):
         raise RuntimeError("Brain returned an unparsed tool call")
-    if not content.strip():
+    cleaned = sanitize_for_speech(content)
+    if not cleaned:
         raise RuntimeError("Brain returned no final answer")
-    return content.strip()
+    return cleaned
 
 
 def validate_arguments(parameters: dict, arguments: object) -> dict:

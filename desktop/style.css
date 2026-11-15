@@ -1,1 +1,30 @@
-*{box-sizing:border-box}body{margin:0;display:flex;height:100vh;background:#10101b;color:#eeedf7;font:14px 'Segoe UI',sans-serif}aside{width:285px;padding:35px 26px;display:flex;flex-direction:column;background:#181728;border-right:1px solid #343047}.brand{display:flex;align-items:center;gap:12px;letter-spacing:3px}.brand strong{display:block;font-size:19px}.brand small{display:block;letter-spacing:1.4px;font-size:9px;color:#9f9ab6;margin-top:5px}.spark{font-size:34px;color:#cbb4ff}.status{display:flex;gap:9px;align-items:center;color:#aaa5bf;margin-top:48px;font-size:12px}#dot{width:8px;height:8px;border-radius:50%;background:#d7a65f}#dot.ready{background:#81d8af}.side-label{color:#a99acb;font-size:10px;letter-spacing:2px;margin-top:55px}aside h2{font-size:25px;line-height:1.25;margin:16px 0 8px}p{color:#aaa6bb;line-height:1.6}aside p{font-size:13px}.controls{display:grid;gap:9px;margin-top:30px}button{font:inherit;cursor:pointer;border:0;border-radius:9px;padding:11px 14px;background:#38324d;color:#eeeaf7}button:hover{background:#4a4063}button:disabled{opacity:.45;cursor:default}.controls button{text-align:left;border:1px solid #48405c;background:#252238}.controls button[aria-pressed=true]{border-color:#bd9aff;color:#e4d4ff}#activity{margin-top:20px;color:#c2addf;font-size:12px}.foot{margin-top:auto;font-size:11px}main{flex:1;min-width:0;display:flex;flex-direction:column}header{padding:28px 40px;border-bottom:1px solid #2b293a;display:flex;justify-content:space-between;align-items:center}header h1{font-size:20px;margin:0}header p{margin:4px 0 0;font-size:12px}.local{font-size:10px;letter-spacing:1px;color:#9cdbb7}#messages{flex:1;overflow:auto;padding:35px 12%;display:flex;flex-direction:column;gap:18px}.welcome{text-align:center;margin:auto}.welcome span{font-size:54px;color:#d1b7ff}.welcome h2{font-size:27px;margin:12px 0}.bubble{max-width:80%;padding:15px 18px;border-radius:16px;line-height:1.55;white-space:pre-wrap;overflow-wrap:anywhere}.user{align-self:flex-end;background:#695389}.fairy{align-self:flex-start;background:#262334}.composer{margin:10px 9% 28px;padding:12px 14px;background:#252333;border:1px solid #444057;border-radius:15px}.compose-row{display:flex;gap:10px}textarea{flex:1;resize:none;background:transparent;color:#fff;border:0;outline:0;font:inherit;padding:10px}#send{background:#c1a1f5;color:#20142e;font-weight:600}.actions{display:flex;align-items:center;gap:8px;margin-top:8px}.actions button{font-size:12px;padding:8px 10px}.actions span{margin-left:auto;color:#8f899f;font-size:11px}dialog{background:#211d30;color:#fff;border:1px solid #5a4d70;border-radius:16px;width:min(700px,90vw)}dialog::backdrop{background:#000a}#sources{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:20px 0;max-height:55vh;overflow:auto}#sources button{overflow:hidden;text-overflow:ellipsis}#sources img{display:block;width:100%;margin-bottom:8px}
+* { box-sizing: border-box; }
+body { margin: 0; display: flex; flex-direction: column; height: 100vh; background: #111116; color: #e8e8ee; font: 14px 'Segoe UI', sans-serif; }
+.topbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 16px; background: #1a1a22; border-bottom: 1px solid #2a2a35; }
+.status { display: flex; align-items: center; gap: 8px; min-width: 0; color: #a0a0b0; font-size: 12px; }
+#dot { width: 8px; height: 8px; border-radius: 50%; background: #c99a4a; flex: none; }
+#dot.ready { background: #4caf84; }
+.controls { display: flex; flex-wrap: wrap; gap: 8px; }
+button { font: inherit; cursor: pointer; border: 1px solid #34343f; border-radius: 6px; padding: 7px 12px; background: #23232d; color: #e8e8ee; }
+button:hover { background: #2d2d39; }
+button:focus-visible, textarea:focus-visible { outline: 2px solid #6c8cff; outline-offset: 1px; }
+button:disabled { opacity: .45; cursor: default; }
+button[aria-pressed=true] { border-color: #6c8cff; color: #b9c8ff; }
+#activity { padding: 0 16px; color: #8c8c9c; font-size: 12px; }
+#activity:not(:empty) { padding-top: 6px; }
+#messages { flex: 1; overflow: auto; padding: 20px 16px; display: flex; flex-direction: column; gap: 10px; }
+.bubble { max-width: min(720px, 85%); padding: 10px 14px; border-radius: 10px; line-height: 1.5; white-space: pre-wrap; overflow-wrap: anywhere; }
+.user { align-self: flex-end; background: #2f3d6b; }
+.fairy { align-self: flex-start; background: #1f1f28; border: 1px solid #2a2a35; }
+.composer { padding: 10px 16px 14px; background: #1a1a22; border-top: 1px solid #2a2a35; }
+.compose-row { display: flex; gap: 8px; }
+textarea { flex: 1; min-width: 0; resize: none; background: #111116; color: #f2f2f6; border: 1px solid #34343f; border-radius: 6px; padding: 9px 11px; font: inherit; }
+#send { background: #6c8cff; border-color: #6c8cff; color: #0d1020; font-weight: 600; }
+#send:hover:not(:disabled) { background: #839ffd; }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+dialog { background: #1a1a22; color: #e8e8ee; border: 1px solid #34343f; border-radius: 10px; width: min(700px, 90vw); }
+dialog::backdrop { background: rgba(0, 0, 0, .6); }
+#sources { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 16px 0; max-height: 55vh; overflow: auto; }
+#sources button { overflow: hidden; text-overflow: ellipsis; }
+#sources img { display: block; width: 100%; margin-bottom: 8px; }
+@media (max-width: 640px) { #sources { grid-template-columns: repeat(2, 1fr); } .bubble { max-width: 95%; } }

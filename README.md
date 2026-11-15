@@ -17,27 +17,41 @@ cd ..
 
 Si Node está instalado en `C:\Program Files\nodejs` pero no está en el PATH, abre una nueva terminal después de instalarlo o añade esa carpeta al PATH. Según la versión de npm, puede ser necesario aprobar el script de instalación de Electron cuando npm lo indique. `setup.py` conserva las dependencias fijadas del receptor DAVE de la versión anterior; la aplicación de escritorio no las usa. Los modelos y binarios existentes no se sobrescriben.
 
-## Uso
+## Uso e interfaz
 
-Espera a que ambos modelos estén listos. Escribe y pulsa **Send**; o pulsa **Record voice**, habla y pulsa **Stop recording**. La grabación termina automáticamente tras 30 segundos. **Stop response** cancela la generación y detiene el audio pendiente. **New conversation** borra el contexto de la sesión.
+La interfaz de escritorio presenta un diseño simplificado en una sola columna con controles directos e indicador de actividad:
 
-Con **Share screen** elige una pantalla o ventana; Fairy recibe fotogramas mientras esté activa y puede analizarlos cuando le preguntes. **Stop sharing** elimina el fotograma. El análisis se realiza bajo demanda, no es vídeo continuo interpretado automáticamente.
+- **Conversación y voz**: Escribe y pulsa **Send** (o pulsa Enter); o pulsa **Record** para hablar. La captura de voz cuenta con detección automática de silencio (VAD), terminando el turno tras una pausa natural de voz o tras el límite máximo de 30 segundos. También es posible pulsar **Stop recording** manualmente. **Stop response** cancela la generación en curso y el audio restante. **New conversation** reinicia el contexto del modelo.
+- **Síntesis por oraciones**: La respuesta hablada se transmite en streaming dividida por oraciones (`split_speech_sentences`), reduciendo la latencia de inicio de reproducción.
+- **Share screen**: Permite seleccionar una pantalla o ventana; Fairy recibe fotogramas periódicos y puede analizarlos bajo demanda mediante LFM3 (`view_screen`). **Stop sharing** detiene el envío y borra el fotograma activo.
+- **Control: on/off**: Habilita o deshabilita las acciones de escritorio de Fairy. Cuando está activo (`Control: on`), MiniCPM puede realizar clics absolutos con escalado de resolución (`desktop_click` con `screen_width` y `screen_height`), escribir texto corto (`desktop_type`, hasta 200 caracteres mediante SendInput), pulsar teclas de navegación (`desktop_key`), desplazarse verticalmente (`desktop_scroll`) y controlar reproducción o volumen multimedia (`media_control`). Por seguridad, estas acciones se rechazan si el control está desactivado.
+- **VTube: on/off**: Conecta o desconecta la integración con VTube Studio a través de WebSocket local (`ws://127.0.0.1:8001`). Al activarse por primera vez, VTube Studio muestra un cuadro de diálogo para autorizar el plugin «Fairy»; el token concedido se guarda localmente en `.vtube_token`. Durante la reproducción de voz, Fairy transmite sincronización labial inyectando el valor RMS del audio en el parámetro `MouthOpen`, y puede activar expresiones faciales del modelo Live2D (`set_expression` con gestos como happy, smug, flustered, angry, surprised, sad o neutral).
+- **Herramientas locales de asistencia**: MiniCPM dispone de herramientas del sistema sin requerir control de escritorio: fecha y hora local (`get_current_time`), títulos de ventanas activas y en primer plano (`get_active_windows`), uso de RAM, disco y VRAM de GPU (`get_system_stats`), lectura de texto del portapapeles (`read_clipboard`), y almacenamiento persistente de preferencias o datos en `.fairy_memory.json` (`remember_fact` y `recall_facts`).
 
-**Desktop control: on** permite a Fairy hacer clics en coordenadas físicas del escritorio y pulsar teclas de navegación; la acción se muestra en la barra lateral. Desactívalo cuando no quieras permitir esas acciones. Esta primera versión no escribe texto, ejecuta comandos ni proporciona una máquina virtual o un sandbox de aplicaciones. Las coordenadas de la imagen reducida no necesariamente coinciden con las coordenadas físicas del escritorio: no se ha demostrado un control visual fiable.
+## Optimización de VRAM y configuración
 
-La conversación y los fotogramas son temporales y se pierden al cerrar. El puente entre Electron y Python utiliza tuberías del proceso; los servidores de modelos escuchan en localhost. La antigua web de pantalla y los módulos de Discord no forman parte del arranque de escritorio. No publiques los servicios locales; consulta [docs/WEB_LOCAL.md](docs/WEB_LOCAL.md).
+El sistema arranca por defecto con una configuración optimizada para tarjetas con 8 GB de VRAM:
 
-## Configuración y verificación
+- `FAIRY_USE_DRAFT=0`: Desactiva por defecto el modelo de decodificación especulativa (DSpark) para ahorrar memoria. Puede reactivarse definiendo `FAIRY_USE_DRAFT=1` en `.env`.
+- `FAIRY_BRAIN_GPU_LAYERS=20`: Descarga 20 capas de MiniCPM a la GPU y el resto a CPU. Para descargar el modelo completo a GPU en tarjetas con mayor memoria, define `FAIRY_BRAIN_GPU_LAYERS=99`.
+- `FAIRY_OMNI_CONTEXT=2048` y `FAIRY_CONTEXT_SIZE=2048`: Ventana de contexto reducida a 2048 tokens.
+- `-fa on`: Flash Attention activado en ambos servidores llama.cpp.
+- `-ctk q8_0 -ctv q8_0`: Cuantización de 8 bits para las claves y valores de la caché KV en ambos servidores.
 
-LFM3 usa por defecto el puerto 8080 (`FAIRY_DESKTOP_OMNI_PORT` y, si se configura, `FAIRY_OMNI_URL` deben coincidir); MiniCPM usa 8082 (`FAIRY_BRAIN_URL`). Ambos deben estar libres y ser distintos. `FAIRY_ASR_LANGUAGE`, `FAIRY_TTS_LANGUAGE` y `FAIRY_TTS_VOICE` conservan sus valores predeterminados `English`, `English` y `female`. Los modelos y la GPU se configuran con las variables descritas en [docs/RUNBOOK.md](docs/RUNBOOK.md).
+LFM3 usa por defecto el puerto 8080 (`FAIRY_DESKTOP_OMNI_PORT` o `FAIRY_OMNI_URL`); MiniCPM usa el puerto 8082 (`FAIRY_BRAIN_URL`). Ambos deben ser distintos y estar libres. Consulta [docs/RUNBOOK.md](docs/RUNBOOK.md) para más detalles.
+
+## Verificación
 
 ```powershell
-./.venv/Scripts/python.exe -m compileall -q fairy main.py setup.py
+./.venv/Scripts/python.exe -m compileall -q fairy main.py setup.py checks
 ./.venv/Scripts/python.exe -m pip check
 ./.venv/Scripts/python.exe -m unittest discover -s checks -v
 ./.venv/Scripts/python.exe setup.py --check --verify-models
 ./.venv/Scripts/python.exe main.py --check
+node --check desktop/main.js
+node --check desktop/preload.js
+node --check desktop/renderer.js
 git diff --check
 ```
 
-Las comprobaciones automáticas no demuestran captura física, escucha audible ni control correcto de ventanas reales. Consulta [docs/VERIFICATION.md](docs/VERIFICATION.md) para el estado de las pruebas. `afairy` y `bfairy` se conservan como versiones históricas.
+Las comprobaciones automáticas prueban lógica, esquemas, APIs simuladas y arranque sin sustituir la prueba física con micrófono, altavoces, ventanas reales o VTube Studio activo. Consulta [docs/VERIFICATION.md](docs/VERIFICATION.md).

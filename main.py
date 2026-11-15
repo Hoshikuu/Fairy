@@ -7,7 +7,7 @@ import shutil
 import subprocess
 import sys
 
-from fairy.paths import ROOT
+from fairy.paths import ELECTRON_EXE, ROOT
 
 
 def find_npm() -> str | None:
@@ -29,12 +29,12 @@ def main() -> int:
     if not npm:
         print("[ERROR] Node.js and npm are required.", file=sys.stderr)
         return 1
-    if not (ROOT / "desktop" / "node_modules" / "electron" / "dist" / "electron.exe").is_file():
+    if not ELECTRON_EXE.is_file():
         print("[ERROR] Electron executable is missing. Run npm install in desktop/.", file=sys.stderr)
         return 1
     if args.check:
         from fairy.installation.installer import check_environment, check_llama
-        from fairy.runner.dual import brain_settings, omni_settings
+        from fairy.runner.dual import brain_settings, omni_settings, use_draft
         from fairy.runner.main import check_port
         from fairy.paths import DRAFT_MODEL, PROMPT, SERVER
         try:
@@ -47,7 +47,10 @@ def main() -> int:
                 raise ValueError("Model ports must be different and match their configured URLs")
             check_port(port)
             check_port(brain_port)
-            for file in (brain, omni, projector, DRAFT_MODEL, PROMPT, SERVER):
+            required = [brain, omni, projector, PROMPT, SERVER]
+            if use_draft():
+                required.append(DRAFT_MODEL)
+            for file in required:
                 if not file.is_file():
                     raise RuntimeError(f"Missing file: {file}")
         except (OSError, RuntimeError, ValueError, subprocess.SubprocessError) as error:
